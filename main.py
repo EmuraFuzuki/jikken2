@@ -1,4 +1,4 @@
-from oscilloscope.task41 import main1
+from oscilloscope.task42 import main1
 
 if __name__ == "__main__":
     try:
