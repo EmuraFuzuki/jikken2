@@ -28,3 +28,10 @@ Traceback (most recent call last):
   File "/home/guest1/emura/jikken2/Device/motion_sensor_test.py", line 11, in main1
     GPIO.setup(SENSOR_PIN, GPIO.IN)  # SENSOR_PINを入力モードに設定
 RuntimeError: Cannot determine SOC peripheral base address
+
+
+(venvdir) guest1@raspberrypi:~/emura/jikken2 $ i2cdetect -y 1
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:                         -- -- -- -- -- -- -- -- 
+10: -- -- -- -- ^C
+
