@@ -83,3 +83,11 @@ dtoverlay=dwc2,dr_mode=host
 [all]
 
 
+>>> %Run main.py
+Traceback (most recent call last):
+  File "/home/guest1/emura/jikken2/main.py", line 6, in <module>
+    main1()
+  File "/home/guest1/emura/jikken2/Device/MPU6050test.py", line 24, in main1
+    bus.write_byte_data(DEVICE_ADDRESS, PWR_MGMT_1, 0)
+TimeoutError: [Errno 110] Connection timed out
+
