@@ -91,3 +91,20 @@ Traceback (most recent call last):
     bus.write_byte_data(DEVICE_ADDRESS, PWR_MGMT_1, 0)
 TimeoutError: [Errno 110] Connection timed out
 
+
+
+Roll:  -61.20°, Pitch: -81.20°
+Roll:  -61.83°, Pitch: -83.49°
+Roll:  -62.28°, Pitch: -84.87°
+Roll:  -62.85°, Pitch: -86.55°
+Roll:  -63.89°, Pitch: -87.04°
+Roll:  -65.53°, Pitch: -87.35°
+Roll:  -66.70°, Pitch: -88.34°
+Roll:  -67.83°, Pitch: -89.11°
+Roll:  -69.47°, Pitch: -89.28°
+Roll:  -70.25°, Pitch: -90.07°
+Roll:  -71.50°, Pitch: -89.53°
+Roll:  -72.98°, Pitch: -87.62°
+Roll:  -72.98°, Pitch: -87.34°
+Roll:  -73.62°, Pitch: -86.52°
+
