@@ -27,14 +27,14 @@ y_flower = r_flower * np.sin(t_flower)
 
 # グラフに表示
 plt.figure(figsize=(10, 10))
-plt.plot(x_circle, y_circle, label="Circle", linewidth=2, color='blue')
-plt.plot(x_spiral, y_spiral, label="Archimedes' spiral", linewidth=1.5, color='green')
-plt.plot(x_flower, y_flower, label="Flower petals", linewidth=2, color='red')
+plt.plot(x_circle, y_circle, label="Circle", linewidth=2, color="blue")
+plt.plot(x_spiral, y_spiral, label="Archimedes' spiral", linewidth=1.5, color="green")
+plt.plot(x_flower, y_flower, label="Flower petals", linewidth=2, color="red")
 
 plt.xlabel("x")
 plt.ylabel("y")
 plt.title("ハナマル (Flower Circle): Circle + Spiral + Petals")
-plt.axis('equal')
+plt.axis("equal")
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.show()

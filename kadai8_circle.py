@@ -14,7 +14,7 @@ plt.plot(x, y, label="Circle (radius=1)", linewidth=2)
 plt.xlabel("x")
 plt.ylabel("y")
 plt.title("Circle centered at origin with radius 1")
-plt.axis('equal')  # 縦横の比率を等しくする
+plt.axis("equal")  # 縦横の比率を等しくする
 plt.grid(True)
 plt.legend()
 plt.show()
