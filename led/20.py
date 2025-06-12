@@ -3,7 +3,7 @@ import time
 
 
 def main():
-    switch = gpiozero.DigitalInputDevice(23, pull_up=False)
+    switch = gpiozero.DigitalInputDevice(23, pull_up=True)
 
     while True:
         if switch.value == 1:

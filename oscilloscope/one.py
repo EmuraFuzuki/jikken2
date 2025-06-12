@@ -7,6 +7,6 @@ def main1():
     for vis in vis_list:
         print(vis)
 
-    inst = rm.open_resource("")
+    inst = rm.open_resource("USB0::6833::1100::DHO9A270600106::0::INSTR")
 
     print(inst.query("*IDN?"))  # 機器のIDを取得
