@@ -108,3 +108,38 @@ Roll:  -72.98°, Pitch: -87.62°
 Roll:  -72.98°, Pitch: -87.34°
 Roll:  -73.62°, Pitch: -86.52°
 
+
+
+# 7/10
+
+手ぶくろ入力装置を初期化しています...
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 393, in _gpio_list
+    return tuple(_to_gpio(int(channel)) for channel in chanlist)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'int' object is not iterable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/guest1/emura/jikken2/Device/main.py", line 86, in <module>
+    main()
+  File "/home/guest1/emura/jikken2/Device/main.py", line 81, in main
+    device = GloveInputDevice()
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/guest1/emura/jikken2/Device/main.py", line 23, in __init__
+    self.hcsr04 = HCSR04()
+                  ^^^^^^^^
+  File "/home/guest1/emura/jikken2/Device/utils/sensors.py", line 65, in __init__
+    GPIO.setup(TRIG_PIN, GPIO.OUT, initial=GPIO.LOW)
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 680, in setup
+    for gpio in _gpio_list(chanlist):
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 396, in _gpio_list
+    return (_to_gpio(int(chanlist)),)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/RPi/GPIO/__init__.py", line 356, in _to_gpio
+    raise RuntimeError(
+RuntimeError: Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)
+
+
