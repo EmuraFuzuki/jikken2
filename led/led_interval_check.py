@@ -32,6 +32,7 @@ def main():
     for i in range(5):
         interval = 1 / (i + 1)  # 点滅時間を10秒に設定
         led.toggle_led(interval=interval)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
