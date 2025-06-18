@@ -1,11 +1,11 @@
 import gpiozero
 import time
 
+LED_PIN = 23
+led = gpiozero.DigitalOutputDevice(LED_PIN)
+
 
 def main():
-    LED_PIN = 23
-
-    led = gpiozero.DigitalOutputDevice(LED_PIN)
     led.on()
     status = True
     while True:
