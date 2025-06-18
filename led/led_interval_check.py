@@ -14,6 +14,7 @@ class LED:
             self.time_length = time_length
         if interval is not None:
             self.interval = interval
+        self.show_interval()
         end_time = time.time() + self.time_length
         while time.time() < end_time:
             self.device.on()
@@ -31,7 +32,6 @@ def main():
     for i in range(5):
         interval = 1 / (i + 1)  # 点滅時間を10秒に設定
         led.toggle_led(interval=interval)
-        led.show_interval()
 
 
 if __name__ == "__main__":
