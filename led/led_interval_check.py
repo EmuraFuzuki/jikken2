@@ -3,9 +3,10 @@ import time
 
 
 class LED:
-    def __init__(self, pin, interval=1.0):
+    def __init__(self, pin, interval=1.0, time_length=3.0):
         self.device = gpiozero.DigitalOutputDevice(pin)
         self.interval = interval
+        self.time_length = time_length
 
     def toggle_led(self, time_length=None, interval=None):
         """LEDを指定した間隔で点滅させる関数"""
@@ -16,9 +17,9 @@ class LED:
         end_time = time.time() + self.time_length
         while time.time() < end_time:
             self.device.on()
-            time.sleep(interval if interval is not None else self.interval)
+            time.sleep(self.interval)
             self.device.off()
-            time.sleep(interval if interval is not None else self.interval)
+            time.sleep(self.interval)
 
     def show_interval(self):
         """LEDの点滅間隔を表示する関数"""
