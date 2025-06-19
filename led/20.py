@@ -12,7 +12,6 @@ def main():
     led.off()  # LEDを消灯
     print("LEDが消灯しました。")
     input("Enterキーを押してプログラムを終了します...")
-    led.cleanup()  # GPIOピンをクリーンアップ
 
 
 if __name__ == "__main__":
