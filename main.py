@@ -1,0 +1,7 @@
+from switch.one import main1
+
+if __name__ == "__main__":
+    try:
+        main1()
+    except KeyboardInterrupt:
+        pass
