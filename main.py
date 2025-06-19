@@ -1,4 +1,4 @@
-from switch.one import main1
+from oscilloscope.one import main1
 
 if __name__ == "__main__":
     try:
