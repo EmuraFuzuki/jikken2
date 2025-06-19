@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 from mod.led import LED
 import time
 
