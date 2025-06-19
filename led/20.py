@@ -1,17 +1,16 @@
-import sys
-
-sys.path.append("..")
-from mod.led import LED
+import gpiozero
+import time
 
 
 def main():
-    led = LED(23)
-    led.on()  # LEDを点灯
-    print("LEDが点灯しました。")
-    input("Enterキーを押してLEDを消灯します...")
-    led.off()  # LEDを消灯
-    print("LEDが消灯しました。")
-    input("Enterキーを押してプログラムを終了します...")
+    switch = gpiozero.DigitalInputDevice(23, pull_up=True)
+
+    while True:
+        if switch.value == 1:
+            print("###################")
+        else:
+            print("...................")
+        time.sleep(0.3)
 
 
 if __name__ == "__main__":
