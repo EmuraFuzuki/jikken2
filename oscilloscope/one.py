@@ -6,3 +6,7 @@ def main1():
     print("接続可能な機器:")
     for vis in vis_list:
         print(vis)
+
+    inst = rm.open_resource("")
+
+    print(inst.query("*IDN?"))  # 機器のIDを取得
