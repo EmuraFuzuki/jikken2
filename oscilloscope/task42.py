@@ -32,15 +32,15 @@ def main1():
         # timeモジュールをインポート
         import time
 
-        # オシロスコープの設定
-        print("オシロスコープを設定中...")
-        inst.write(":CHANnel2:DISPlay ON")  # CH2を表示
-        inst.write(":CHANnel2:SCALe 1")  # CH2の縦軸スケールを1V/div
-        inst.write(":CHANnel2:OFFSet 0")  # CH2のオフセットを0V
-        inst.write(":TIMebase:SCALe 0.0001")  # 時間軸を100μs/div
-        inst.write(":TRIGger:SOURce CHANnel2")  # CH2をトリガーソースに
-        inst.write(":TRIGger:LEVel 0.1")  # トリガーレベルを0.1V（HC-SR04は3.3V信号）
-        inst.write(":TRIGger:SLOPe POSitive")  # 正エッジトリガー
+        # # オシロスコープの設定
+        # print("オシロスコープを設定中...")
+        # inst.write(":CHANnel2:DISPlay ON")  # CH2を表示
+        # inst.write(":CHANnel2:SCALe 1")  # CH2の縦軸スケールを1V/div
+        # inst.write(":CHANnel2:OFFSet 0")  # CH2のオフセットを0V
+        # inst.write(":TIMebase:SCALe 0.0001")  # 時間軸を100μs/div
+        # inst.write(":TRIGger:SOURce CHANnel2")  # CH2をトリガーソースに
+        # inst.write(":TRIGger:LEVel 0.1")  # トリガーレベルを0.1V（HC-SR04は3.3V信号）
+        # inst.write(":TRIGger:SLOPe POSitive")  # 正エッジトリガー
 
         # トリガーモードをNORMALに設定
         inst.write(":TRIGger:SWEep NORMal")
