@@ -573,7 +573,7 @@ def main_debug():
 
 if __name__ == "__main__":
     # メイン関数を実行
-    # main1()
+    main1()
 
     # デバッグモードを実行する場合
-    main_debug()
+    # main_debug()
