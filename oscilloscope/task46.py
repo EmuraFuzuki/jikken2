@@ -7,12 +7,12 @@ def main1():
         import time
 
         # GPIO2番ピンにタクトスイッチを接続（プルアップ抵抗使用）
-        button = Button(2)
+        button = Button(22)
 
         print("タクトスイッチの長押し時間を測定します")
         print()
         print("=== 回路構成 ===")
-        print("- タクトスイッチの一端: GPIO2")
+        print("- タクトスイッチの一端: GPIO22")
         print("- タクトスイッチの他端: GND")
         print("- 内蔵プルアップ抵抗を使用")
         print()
