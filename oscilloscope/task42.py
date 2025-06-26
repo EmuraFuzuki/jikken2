@@ -25,11 +25,42 @@ def main1():
 
         print("\n距離センサーを動作させてからオシロスコープで波形を取得します")
         input("準備ができたらEnterキーを押してください...")
+
         # HC-SR04距離センサー（Echo=24, Trigger=23）
         sensor = DistanceSensor(echo=24, trigger=23)
+
+        # オシロスコープの設定
+        print("オシロスコープを設定中...")
+        inst.write(":CHANnel2:DISPlay ON")  # CH2を表示
+        inst.write(":CHANnel2:SCALe 1")  # CH2の縦軸スケールを1V/div
+        inst.write(":CHANnel2:OFFSet 0")  # CH2のオフセットを0V
+        inst.write(":TIMebase:SCALe 0.0001")  # 時間軸を100μs/div
+        inst.write(":TRIGger:SOURce CHANnel2")  # CH2をトリガーソースに
+        inst.write(":TRIGger:LEVel 0.5")  # トリガーレベルを0.5V
+        inst.write(":TRIGger:SLOPe POSitive")  # 正エッジトリガー
+
         # シングルショット測定に設定
         inst.write(":SINGle")
         inst.query("*OPC?")
+
+        print("距離センサーの測定を開始します...")
+
+        # timeモジュールをインポート
+        import time
+
+        # センサーの測定を実行（これによりTrigger信号とEcho信号が生成される）
+        try:
+            # 複数回測定してセンサーを確実に動作させる
+            for i in range(3):
+                distance = sensor.distance
+                print(f"測定{i + 1}: {distance:.2f} m")
+                time.sleep(0.1)
+        except Exception as e:
+            print(f"センサー測定中にエラー: {e}")
+            # エラーが発生してもオシロスコープでの測定は続行
+
+        # 少し待ってから波形取得
+        time.sleep(0.1)
 
         # CH2（Echo信号）の波形を取得
         inst.write(":WAVeform:SOURce CHANnel2")
@@ -275,3 +306,145 @@ def main1():
     except Exception as e:
         print(f"エラーが発生しました: {e}")
         print("接続を確認してください")
+
+
+def main_debug():
+    """デバッグ用の代替実装 - センサーとオシロスコープの動作確認"""
+    import pyvisa
+    import time
+
+    print("=== デバッグモード: センサーとオシロスコープの動作確認 ===")
+
+    try:
+        from gpiozero import DistanceSensor
+
+        # 1. まずセンサー単体での動作確認
+        print("\n1. センサー単体での動作確認...")
+        sensor = DistanceSensor(echo=24, trigger=23)
+
+        for i in range(5):
+            try:
+                distance = sensor.distance
+                print(f"  測定{i + 1}: {distance:.3f} m ({distance * 100:.1f} cm)")
+                time.sleep(0.5)
+            except Exception as e:
+                print(f"  測定{i + 1}: エラー - {e}")
+
+        # 2. オシロスコープとの接続確認
+        print("\n2. オシロスコープとの接続確認...")
+        rm = pyvisa.ResourceManager()
+        visaList = rm.list_resources()
+        print("  接続可能な機器:")
+        for vis in visaList:
+            print(f"    {vis}")
+
+        if len(visaList) == 0:
+            print("  エラー: オシロスコープが見つかりません")
+            return
+
+        inst = rm.open_resource(visaList[0])
+        print(f"  接続した機器: {inst}")
+        inst.timeout = 10000
+
+        # 3. オシロスコープの基本設定確認
+        print("\n3. オシロスコープの基本設定...")
+        try:
+            idn = inst.query("*IDN?")
+            print(f"  機器ID: {idn.strip()}")
+        except Exception as e:
+            print(f"  IDN取得エラー: {e}")
+
+        # CH2の設定
+        inst.write(":CHANnel2:DISPlay ON")
+        inst.write(":CHANnel2:SCALe 1")
+        inst.write(":CHANnel2:OFFSet 0")
+        inst.write(":TIMebase:SCALe 0.0001")  # 100μs/div
+        inst.write(":TRIGger:SOURce CHANnel2")
+        inst.write(":TRIGger:LEVel 0.5")
+        inst.write(":TRIGger:SLOPe POSitive")
+        print("  CH2設定完了")
+
+        # 4. 測定とトリガー待機
+        print("\n4. 測定実行...")
+        print("  準備ができたら距離センサーの前に障害物を置いてください")
+        input("  準備完了後、Enterキーを押してください...")
+
+        # シングルショット測定
+        inst.write(":SINGle")
+        inst.query("*OPC?")
+        print("  シングルショット測定開始")
+
+        # センサー測定を複数回実行
+        print("  センサー測定を実行中...")
+        for i in range(5):
+            try:
+                distance = sensor.distance
+                print(f"    測定{i + 1}: {distance:.3f} m")
+                time.sleep(0.2)
+            except Exception as e:
+                print(f"    測定{i + 1}: エラー - {e}")
+
+        # トリガー状態確認
+        print("\n5. トリガー状態確認...")
+        try:
+            trig_status = inst.query(":TRIGger:STATus?")
+            print(f"  トリガー状態: {trig_status.strip()}")
+        except Exception as e:
+            print(f"  トリガー状態取得エラー: {e}")
+
+        # 波形データ取得試行
+        print("\n6. 波形データ取得試行...")
+        try:
+            inst.write(":WAVeform:SOURce CHANnel2")
+            inst.write(":WAVeform:MODE NORMal")
+            inst.write(":WAVeform:FORMat BYTE")
+
+            points = inst.query("WAVeform:POINts?")
+            print(f"  データ点数: {points.strip()}")
+
+            # 小さなデータ量で試行
+            inst.write(":WAVeform:POINts 1000")
+            binwave = inst.query_binary_values(
+                ":WAVeform:DATA?", datatype="B", container=list
+            )
+            print(f"  取得したデータ点数: {len(binwave)}")
+            print(f"  データ範囲: {min(binwave)} ～ {max(binwave)}")
+
+            # 簡単な解析
+            if len(binwave) > 0:
+                high_count = sum(1 for x in binwave if x > 128)
+                print(
+                    f"  高レベル点数: {high_count}/{len(binwave)} ({high_count / len(binwave) * 100:.1f}%)"
+                )
+
+        except Exception as e:
+            print(f"  波形データ取得エラー: {e}")
+
+        # 自動測定に戻す
+        inst.write(":RUN")
+        inst.close()
+        rm.close()
+
+        print("\n=== デバッグ完了 ===")
+        print("問題が解決しない場合は以下を確認してください:")
+        print("- GPIO接続: Echo=GPIO24, Trigger=GPIO23")
+        print("- オシロスコープ接続: CH2にEcho信号を接続")
+        print("- 電源供給: センサーに5Vを供給")
+        print("- 測定環境: 障害物との距離が2cm～400cm")
+
+    except ImportError as e:
+        print(f"ライブラリインポートエラー: {e}")
+        print("sudo pip install gpiozero を実行してください")
+    except Exception as e:
+        print(f"予期しないエラー: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+
+if __name__ == "__main__":
+    # メイン関数を実行
+    # main1()
+
+    # デバッグモードを実行する場合
+    main_debug()
