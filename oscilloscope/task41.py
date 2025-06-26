@@ -4,6 +4,7 @@ def main1():
     import matplotlib.pyplot as plt
     from gpiozero import DistanceSensor
     import time
+    import japanize_matplotlib
 
     print("=== 課題41: オシロスコープとの通信でEcho波形記録 ===")
 
@@ -33,11 +34,31 @@ def main1():
         print("2. プローブのGNDをブレッドボードのGNDに接続")
         print("3. オシロスコープの設定:")
         print("   - CH2をアクティブに設定")
-        print("   - 時間軸: 100μs/div")
-        print("   - 電圧軸: 1V/div")
+        print("   - 時間軸と電圧軸を適切に設定してください")
+        print("   - 推奨設定: 時間軸 100μs/div、電圧軸 1V/div")
         print("   - トリガー: AUTO または NORMAL")
+        print("   - Echo信号が見えるように調整してください")
 
-        input("\n設定完了後、Enterキーを押してください...")
+        # オシロスコープの現在設定を取得・表示
+        print("\n=== 現在のオシロスコープ設定 ===")
+        try:
+            # CH2の時間軸設定を取得
+            time_scale = float(inst.query(":TIMebase:SCALe?"))
+            print(f"時間軸: {time_scale * 1e6:.1f} μs/div")
+
+            # CH2の電圧軸設定を取得
+            volt_scale = float(inst.query(":CHANnel2:SCALe?"))
+            print(f"CH2電圧軸: {volt_scale:.3f} V/div")
+
+            # オフセット設定を取得
+            volt_offset = float(inst.query(":CHANnel2:OFFSet?"))
+            print(f"CH2オフセット: {volt_offset:.3f} V")
+
+        except Exception as e:
+            print(f"設定取得エラー: {e}")
+            print("手動で設定を確認してください")
+
+        input("\n設定確認・調整完了後、Enterキーを押してください...")
 
         # 距離測定を1回実行してトリガー
         print("距離測定を実行中...")
@@ -93,8 +114,16 @@ def main1():
         # Echo信号の解析
         print("\n=== Echo信号の解析 ===")
 
-        # 閾値を設定（3.3Vの50%）
-        threshold = 1.65
+        # 自動で適切な閾値を設定
+        # 電圧データの最大値と最小値から閾値を計算
+        max_voltage = max(voltage_data)
+        min_voltage = min(voltage_data)
+        threshold = (
+            min_voltage + (max_voltage - min_voltage) * 0.5
+        )  # 中間値を閾値とする
+
+        print(f"検出された電圧範囲: {min_voltage:.3f}V ～ {max_voltage:.3f}V")
+        print(f"自動設定閾値: {threshold:.3f}V")
 
         # Echo信号のHighの期間を検出
         high_periods = []
@@ -145,7 +174,7 @@ def main1():
             color="r",
             linestyle="--",
             alpha=0.7,
-            label=f"閾値 {threshold:.1f}V",
+            label=f"閾値 {threshold:.3f}V",
         )
         if high_periods:
             for start, end, dur in high_periods:
@@ -174,7 +203,7 @@ def main1():
                 color="r",
                 linestyle="--",
                 alpha=0.7,
-                label=f"閾値 {threshold:.1f}V",
+                label=f"閾値 {threshold:.3f}V",
             )
             plt.axvspan(
                 echo_start * 1e6,
