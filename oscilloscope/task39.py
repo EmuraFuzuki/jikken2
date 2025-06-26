@@ -6,6 +6,7 @@ def main1():
         from gpiozero import DistanceSensor
         from time import sleep
         import matplotlib.pyplot as plt
+        import japanize_matplotlib
 
         # HC-SR04距離センサー（Echo=24, Trigger=23）
         sensor = DistanceSensor(echo=24, trigger=23)
