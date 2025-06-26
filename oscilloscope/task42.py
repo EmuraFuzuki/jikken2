@@ -6,6 +6,8 @@ def main1():
     print("=== 課題42: Echo信号のHigh持続時間解析 ===")
 
     try:
+        from gpiozero import DistanceSensor
+
         # オシロスコープとの接続
         rm = pyvisa.ResourceManager()
         visaList = rm.list_resources()
@@ -23,7 +25,8 @@ def main1():
 
         print("\n距離センサーを動作させてからオシロスコープで波形を取得します")
         input("準備ができたらEnterキーを押してください...")
-
+        # HC-SR04距離センサー（Echo=24, Trigger=23）
+        sensor = DistanceSensor(echo=24, trigger=23)
         # シングルショット測定に設定
         inst.write(":SINGle")
         inst.query("*OPC?")
