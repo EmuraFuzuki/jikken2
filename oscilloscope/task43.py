@@ -99,7 +99,7 @@ def main1():
                 ]
 
                 # Echo信号の解析
-                threshold = 1.5  # V
+                threshold = 0.1  # V
                 echo_duration = analyze_echo_duration(
                     time_data, voltage_data, threshold
                 )
