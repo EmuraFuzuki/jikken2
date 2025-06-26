@@ -1,9 +1,11 @@
-# 課題42: 波形データを解析してEcho出力のHigh持続時間を求める
+# 課題42: 異なる距離での測定により距離計算式の精度を検証する
 def main1():
     import pyvisa
     import matplotlib.pyplot as plt
+    import time
 
-    print("=== 課題42: Echo信号のHigh持続時間解析 ===")
+    print("=== 課題42: 距離計算式の精度検証 ===")
+    print("d = τv/2 (v = 340 m/s) の精度を異なる距離で検証します")
 
     try:
         from gpiozero import DistanceSensor
@@ -23,53 +25,47 @@ def main1():
         print(f"接続した機器: {inst}")
         inst.timeout = 10000  # ms
 
-        print("\n距離センサーを動作させてからオシロスコープで波形を取得します")
-        input("準備ができたらEnterキーを押してください...")
-
         # HC-SR04距離センサー（Echo=24, Trigger=23）
         sensor = DistanceSensor(echo=24, trigger=23)
 
-        # timeモジュールをインポート
-        import time
+        # 結果を保存するリスト
+        measurement_results = []
 
-        # トリガーモードをNORMALに設定
-        inst.write(":TRIGger:SWEep NORMal")
+        while True:
+            print("\n" + "=" * 50)
+            print("新しい測定を開始します")
+            print("物体を適切な位置に配置してください")
 
-        print("測定準備完了")
+            # 実際の距離を入力
+            try:
+                actual_distance = float(input("実際の距離 [cm]: "))
+            except ValueError:
+                print("数値を入力してください")
+                continue
+            except KeyboardInterrupt:
+                print("\n測定を終了します")
+                break
 
-        # 連続測定とシングルショットを組み合わせた方法
-        max_attempts = 5
-        acq_record = 0
+            input("準備ができたらEnterキーを押してください...")
 
-        for attempt in range(max_attempts):
-            print(f"\n=== 測定試行 {attempt + 1}/{max_attempts} ===")
-
-            # シングルショット測定に設定
+            # シングルショット測定
             inst.write(":SINGle")
             time.sleep(0.1)
 
             print("距離センサーの測定を開始します...")
 
-            # センサーの測定を実行（これによりTrigger信号とEcho信号が生成される）
+            # センサーの測定を実行
             try:
-                distance = sensor.distance
-                print(f"測定距離: {distance:.3f} m ({distance * 100:.1f} cm)")
-
-                # 測定後少し待機
+                sensor_distance = sensor.distance
+                print(
+                    f"センサー測定距離: {sensor_distance:.3f} m ({sensor_distance * 100:.1f} cm)"
+                )
                 time.sleep(0.2)
-
             except Exception as e:
                 print(f"センサー測定中にエラー: {e}")
                 continue
 
-            # トリガー状態確認
-            try:
-                trig_status = inst.query(":TRIGger:STATus?").strip()
-                print(f"トリガー状態: {trig_status}")
-            except Exception:
-                print("トリガー状態確認不可")
-
-            # CH2（Echo信号）の波形を取得
+            # 波形データを取得
             inst.write(":WAVeform:SOURce CHANnel2")
             inst.write(":WAVeform:MODE NORMal")
             inst.write(":WAVeform:FORMat BYTE")
@@ -79,232 +75,151 @@ def main1():
                 acq_record = int(inst.query("WAVeform:POINts?"))
                 print(f"データ点数: {acq_record}")
 
-                if acq_record > 100:  # 十分なデータが取得できた場合
-                    print("波形データの取得に成功しました")
-                    break
-                else:
-                    print("データ点数が少なすぎます。再試行...")
-                    # 連続測定に戻して再度トリガーを待つ
-                    inst.write(":RUN")
-                    time.sleep(0.5)
+                if acq_record <= 100:
+                    print("データ点数が不足しています。再試行してください。")
+                    continue
 
             except Exception as e:
                 print(f"データ点数取得エラー: {e}")
-                inst.write(":RUN")
-                time.sleep(0.5)
+                continue
 
-        if acq_record <= 0:
-            print("\n波形データの取得に失敗しました")
-            print("確認事項:")
-            print("- CH2にEcho信号（GPIO24）が正しく接続されているか")
-            print("- トリガーレベルが適切か（Echo信号レベルより低く設定）")
-            print("- センサーが正常に動作しているか")
-            inst.write(":RUN")
-            inst.close()
-            rm.close()
-            return
+            # 軸のスケール情報を取得
+            try:
+                x_increment = float(inst.query(":WAVeform:XINCrement?"))
+                x_origin = float(inst.query(":WAVeform:XORigin?"))
+                x_reference = float(inst.query(":WAVeform:XREFerence?"))
 
-        # 軸のスケール情報を取得
-        try:
-            x_increment = float(inst.query(":WAVeform:XINCrement?"))
-            x_origin = float(inst.query(":WAVeform:XORigin?"))
-            x_reference = float(inst.query(":WAVeform:XREFerence?"))
+                y_increment = float(inst.query(":WAVeform:YINCrement?"))
+                y_origin = float(inst.query(":WAVeform:YORigin?"))
+                y_reference = float(inst.query(":WAVeform:YREFerence?"))
 
-            y_increment = float(inst.query(":WAVeform:YINCrement?"))
-            y_origin = float(inst.query(":WAVeform:YORigin?"))
-            y_reference = float(inst.query(":WAVeform:YREFerence?"))
+                print(f"時間分解能: {x_increment * 1e6:.2f} μs/point")
 
-            print(f"時間分解能: {x_increment * 1e6:.2f} μs/point")
+            except Exception as e:
+                print(f"スケール情報取得エラー: {e}")
+                continue
 
-        except Exception as e:
-            print(f"スケール情報取得エラー: {e}")
-            inst.write(":RUN")
-            inst.close()
-            rm.close()
-            return
+            # 波形データを取得
+            try:
+                binwave = inst.query_binary_values(
+                    ":WAVeform:DATA?",
+                    datatype="B",
+                    container=list,
+                    chunk_size=acq_record,
+                )
+                print(f"取得した生データ点数: {len(binwave)}")
 
-        # 波形データを取得
-        try:
-            binwave = inst.query_binary_values(
-                ":WAVeform:DATA?", datatype="B", container=list, chunk_size=acq_record
-            )
-            print(f"取得した生データ点数: {len(binwave)}")
+                if len(binwave) == 0:
+                    print("波形データが空です")
+                    continue
 
-            if len(binwave) == 0:
-                print("波形データが空です")
-                inst.write(":RUN")
-                inst.close()
-                rm.close()
-                return
+            except Exception as e:
+                print(f"波形データ取得エラー: {e}")
+                continue
 
-        except Exception as e:
-            print(f"波形データ取得エラー: {e}")
-            inst.write(":RUN")
-            inst.close()
-            rm.close()
-            return
+            # 時間軸とデータをスケールに変換
+            try:
+                time_data = [
+                    (i - x_reference) * x_increment + x_origin
+                    for i in range(len(binwave))
+                ]
+                voltage_data = [
+                    (data - y_reference) * y_increment + y_origin for data in binwave
+                ]
 
-        # 自動測定に変更
-        inst.write(":RUN")
-        inst.close()
-        rm.close()
+                print(f"総測定時間: {(time_data[-1] - time_data[0]) * 1e3:.2f} ms")
+                print(f"電圧範囲: {min(voltage_data):.3f}V ～ {max(voltage_data):.3f}V")
 
-        # 時間軸とデータをスケールに変換
-        try:
-            time_data = [
-                (i - x_reference) * x_increment + x_origin for i in range(len(binwave))
-            ]
-            voltage_data = [
-                (data - y_reference) * y_increment + y_origin for data in binwave
-            ]
+            except Exception as e:
+                print(f"データ変換エラー: {e}")
+                continue
 
-            print(f"総測定時間: {(time_data[-1] - time_data[0]) * 1e3:.2f} ms")
-            print(f"電圧範囲: {min(voltage_data):.3f}V ～ {max(voltage_data):.3f}V")
+            # Echo信号のHigh持続時間を解析（閾値0.1V固定）
+            print("\n=== Echo信号解析（閾値: 0.1V） ===")
 
-        except Exception as e:
-            print(f"データ変換エラー: {e}")
-            return
+            threshold = 0.1
+            high_periods = []
+            in_high = False
+            start_time = 0
+            start_idx = 0
 
-        # Echo信号のHigh持続時間を解析
-        print("\n=== Echo信号のHigh持続時間解析 ===")
+            for i, voltage in enumerate(voltage_data):
+                if voltage > threshold and not in_high:
+                    # Highの開始
+                    in_high = True
+                    start_time = time_data[i]
+                    start_idx = i
+                elif voltage <= threshold and in_high:
+                    # Highの終了
+                    in_high = False
+                    end_time = time_data[i]
+                    duration = end_time - start_time
 
-        import matplotlib.pyplot as plt
+                    # 最小パルス幅フィルタ（1μs以上）
+                    if duration > 1e-6:
+                        high_periods.append(
+                            {
+                                "start_time": start_time,
+                                "end_time": end_time,
+                                "duration": duration,
+                                "start_idx": start_idx,
+                                "end_idx": i,
+                            }
+                        )
 
-        # Echo信号をとりあえず表示
-        plt.figure(figsize=(12, 6))
-        plt.plot(
-            [t * 1e6 for t in time_data],
-            voltage_data,
-            label="Echo Signal",
-            color="blue",
-            linewidth=1,
-        )
-        plt.xlabel("Time [μs]")
-        plt.ylabel("Voltage [V]")
-        plt.title("Echo Signal Waveform")
-        plt.axhline(
-            y=0.1, color="red", linestyle="--", label="Threshold (0.1V)", alpha=0.7
-        )
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-        # Echo信号の解析関数
+            if not high_periods:
+                print("Echo信号が検出されませんでした")
+                continue
 
-        def analyze_echo_signal(time_data, voltage_data):
-            """Echo信号のHigh持続時間を解析する"""
+            # 最も長いパルス（Echo信号と推定）
+            echo_pulse = max(high_periods, key=lambda x: x["duration"])
+            echo_duration = echo_pulse["duration"]
 
-            # 複数の閾値で解析を行う
-            thresholds = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            results = []
+            print(f"検出されたHighパルス数: {len(high_periods)}")
+            print(f"Echo信号持続時間 τ: {echo_duration * 1e6:.2f} μs")
+            print(f"開始時刻: {echo_pulse['start_time'] * 1e6:.1f} μs")
+            print(f"終了時刻: {echo_pulse['end_time'] * 1e6:.1f} μs")
 
-            for threshold in thresholds:
-                high_periods = []
-                in_high = False
-                start_time = 0
-                start_idx = 0
+            # 距離計算
+            sound_speed = 340  # m/s
+            calculated_distance = (echo_duration * sound_speed) / 2 * 100  # cm
+            print(f"計算距離: {calculated_distance:.2f} cm")
+            print(f"実測距離: {actual_distance:.1f} cm")
 
-                for i, voltage in enumerate(voltage_data):
-                    if voltage > threshold and not in_high:
-                        # Highの開始
-                        in_high = True
-                        start_time = time_data[i]
-                        start_idx = i
-                    elif voltage <= threshold and in_high:
-                        # Highの終了
-                        in_high = False
-                        end_time = time_data[i]
-                        duration = end_time - start_time
-
-                        # 最小パルス幅フィルタ（1μs以上）
-                        if duration > 1e-6:
-                            high_periods.append(
-                                {
-                                    "start_time": start_time,
-                                    "end_time": end_time,
-                                    "duration": duration,
-                                    "start_idx": start_idx,
-                                    "end_idx": i,
-                                }
-                            )
-
-                results.append({"threshold": threshold, "periods": high_periods})
-
-            return results
-
-        # 解析実行
-        analysis_results = analyze_echo_signal(time_data, voltage_data)
-
-        # 結果表示
-        for result in analysis_results:
-            threshold = result["threshold"]
-            periods = result["periods"]
-
-            print(f"\n閾値 {threshold:.1f}V での解析結果:")
-            print(f"  検出されたHighパルス数: {len(periods)}")
-
-            if periods:
-                # 最も長いパルス（Echo信号と推定）
-                longest_pulse = max(periods, key=lambda x: x["duration"])
-                echo_duration = longest_pulse["duration"]
-
-                print(f"  最長パルス持続時間: {echo_duration * 1e6:.1f} μs")
-                print(f"  開始時刻: {longest_pulse['start_time'] * 1e6:.1f} μs")
-                print(f"  終了時刻: {longest_pulse['end_time'] * 1e6:.1f} μs")
-
-                # 距離計算
-                sound_speed = 340  # m/s
-                calculated_distance = (echo_duration * sound_speed) / 2 * 100  # cm
-                print(f"  計算距離: {calculated_distance:.2f} cm")
-
-                # 全パルスの情報
-                if len(periods) > 1:
-                    print("  全パルス情報:")
-                    for i, period in enumerate(periods):
-                        print(f"    パルス{i + 1}: {period['duration'] * 1e6:.1f} μs")
-
-        # 最適な閾値を選択（最も安定した結果を得る）
-        optimal_result = None
-        for result in analysis_results:
-            if len(result["periods"]) >= 1:
-                optimal_result = result
-                break
-
-        if optimal_result:
-            echo_pulse = max(optimal_result["periods"], key=lambda x: x["duration"])
-            optimal_threshold = optimal_result["threshold"]
-
-            print(f"\n=== 最終結果（閾値 {optimal_threshold:.1f}V） ===")
-            print(f"Echo信号持続時間 τ: {echo_pulse['duration'] * 1e6:.2f} μs")
+            # 誤差計算
+            error = abs(calculated_distance - actual_distance)
+            error_percent = (error / actual_distance) * 100
+            print(f"誤差: {error:.2f} cm ({error_percent:.1f}%)")
 
             # グラフ表示
-            plt.figure(figsize=(14, 10))
+            plt.figure(figsize=(12, 8))
 
-            # 全波形表示
-            plt.subplot(3, 1, 1)
+            # 波形表示
+            plt.subplot(2, 1, 1)
             plt.plot([t * 1e6 for t in time_data], voltage_data, "b-", linewidth=1)
             plt.axhline(
-                y=optimal_threshold,
+                y=threshold,
                 color="r",
                 linestyle="--",
                 alpha=0.7,
-                label=f"閾値 {optimal_threshold:.1f}V",
+                label=f"閾値 {threshold:.1f}V",
             )
-            for period in optimal_result["periods"]:
-                plt.axvspan(
-                    period["start_time"] * 1e6,
-                    period["end_time"] * 1e6,
-                    alpha=0.3,
-                    color="yellow",
-                )
+            plt.axvspan(
+                echo_pulse["start_time"] * 1e6,
+                echo_pulse["end_time"] * 1e6,
+                alpha=0.3,
+                color="yellow",
+                label=f"Echo pulse: {echo_duration * 1e6:.1f}μs",
+            )
             plt.xlabel("Time [μs]")
             plt.ylabel("Voltage [V]")
-            plt.title("Echo Signal Analysis - Full Waveform")
+            plt.title(f"Echo Signal (距離: {actual_distance:.1f}cm)")
             plt.legend()
             plt.grid(True)
 
-            # Echo信号部分の拡大
-            plt.subplot(3, 1, 2)
-            margin = 50  # データポイント
+            # Echo信号部分の拡大表示
+            plt.subplot(2, 1, 2)
+            margin = 50
             start_idx = max(0, echo_pulse["start_idx"] - margin)
             end_idx = min(len(time_data), echo_pulse["end_idx"] + margin)
 
@@ -312,82 +227,85 @@ def main1():
             zoom_voltage = voltage_data[start_idx:end_idx]
 
             plt.plot([t * 1e6 for t in zoom_time], zoom_voltage, "b-", linewidth=2)
-            plt.axhline(y=optimal_threshold, color="r", linestyle="--", alpha=0.7)
+            plt.axhline(y=threshold, color="r", linestyle="--", alpha=0.7)
             plt.axvspan(
                 echo_pulse["start_time"] * 1e6,
                 echo_pulse["end_time"] * 1e6,
                 alpha=0.3,
                 color="yellow",
-                label=f"Echo pulse: {echo_pulse['duration'] * 1e6:.1f}μs",
-            )
-            plt.axvline(
-                x=echo_pulse["start_time"] * 1e6, color="g", linestyle=":", alpha=0.8
-            )
-            plt.axvline(
-                x=echo_pulse["end_time"] * 1e6, color="g", linestyle=":", alpha=0.8
             )
             plt.xlabel("Time [μs]")
             plt.ylabel("Voltage [V]")
-            plt.title("Echo Signal Analysis - Zoomed View")
-            plt.legend()
+            plt.title("Echo Signal - 拡大表示")
             plt.grid(True)
-
-            # 複数閾値での比較
-            plt.subplot(3, 1, 3)
-            durations_by_threshold = []
-            threshold_values = []
-
-            for result in analysis_results:
-                if result["periods"]:
-                    longest = max(result["periods"], key=lambda x: x["duration"])
-                    durations_by_threshold.append(longest["duration"] * 1e6)
-                    threshold_values.append(result["threshold"])
-
-            if durations_by_threshold:
-                plt.plot(
-                    threshold_values,
-                    durations_by_threshold,
-                    "o-",
-                    linewidth=2,
-                    markersize=8,
-                )
-                plt.xlabel("Threshold [V]")
-                plt.ylabel("Echo Duration [μs]")
-                plt.title("Echo Duration vs Threshold")
-                plt.grid(True)
 
             plt.tight_layout()
             plt.show()
 
-            # データ保存
+            # 継続するかどうかを確認
+            continue_choice = input("\n別の距離で測定を続けますか？ (y/n): ").lower()
+            if continue_choice != "y":
+                break
+
+        # 測定終了後の結果まとめ
+        if measurement_results:
+            print("\n" + "=" * 60)
+            print("=== 測定結果のまとめ ===")
+            print("実測距離[cm]\t計算距離[cm]\tEcho時間[μs]\t誤差[cm]\t誤差[%]")
+            print("-" * 60)
+
+            for result in measurement_results:
+                print(
+                    f"{result['actual_distance']:8.1f}\t"
+                    f"{result['calculated_distance']:8.2f}\t"
+                    f"{result['echo_duration']:8.2f}\t"
+                    f"{result['error']:6.2f}\t"
+                    f"{result['error_percent']:6.1f}"
+                )
+
+            # 結果をファイルに保存
             import os
 
             data_dir = "../data"
             if not os.path.exists(data_dir):
                 os.makedirs(data_dir)
 
-            filename = "../data/echo_analysis.txt"
-            with open(filename, "w") as f:
-                f.write("# Echo Signal Analysis Results\n")
-                f.write(f"# Optimal Threshold: {optimal_threshold:.1f} V\n")
-                f.write(f"# Echo Duration: {echo_pulse['duration'] * 1e6:.2f} μs\n")
-                f.write(f"# Start Time: {echo_pulse['start_time'] * 1e6:.1f} μs\n")
-                f.write(f"# End Time: {echo_pulse['end_time'] * 1e6:.1f} μs\n")
-                f.write("# Time[μs]\tVoltage[V]\n")
-                for t, v in zip(time_data, voltage_data):
-                    f.write(f"{t * 1e6:.3f}\t{v:.6f}\n")
+            filename = "../data/distance_verification.txt"
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write("# 距離計算式 d = τv/2 (v = 340 m/s) の精度検証結果\n")
+                f.write(
+                    "# 実測距離[cm]\t計算距離[cm]\tEcho時間[μs]\t誤差[cm]\t誤差[%]\n"
+                )
+                for result in measurement_results:
+                    f.write(
+                        f"{result['actual_distance']:.1f}\t"
+                        f"{result['calculated_distance']:.2f}\t"
+                        f"{result['echo_duration']:.2f}\t"
+                        f"{result['error']:.2f}\t"
+                        f"{result['error_percent']:.1f}\n"
+                    )
 
-            print(f"\n解析結果を {filename} に保存しました")
+            print(f"\n結果を {filename} に保存しました")
 
-        else:
-            print("\nEcho信号が検出されませんでした")
-            print("確認事項:")
-            print("- センサーが正常に動作しているか")
-            print("- オシロスコープのプローブが正しく接続されているか")
-            print("- 測定範囲内に障害物があるか")
+            # 統計情報
+            errors = [r["error"] for r in measurement_results]
+            error_percents = [r["error_percent"] for r in measurement_results]
+
+            print("\n=== 統計情報 ===")
+            print(f"測定回数: {len(measurement_results)}")
+            print(f"平均誤差: {sum(errors) / len(errors):.2f} cm")
+            print(f"最大誤差: {max(errors):.2f} cm")
+            print(f"最小誤差: {min(errors):.2f} cm")
+            print(f"平均誤差率: {sum(error_percents) / len(error_percents):.1f}%")
+
+        # オシロスコープの接続を閉じる
+        inst.close()
+        rm.close()
+        print("\nオシロスコープとの接続を終了しました")
 
     except ImportError as e:
         print(f"必要なライブラリがインストールされていません: {e}")
+        print("gpiozero と pyvisa をインストールしてください")
 
     except Exception as e:
         print(f"エラーが発生しました: {e}")
@@ -397,6 +315,3 @@ def main1():
 if __name__ == "__main__":
     # メイン関数を実行
     main1()
-
-    # デバッグモードを実行する場合
-    # main_debug()
