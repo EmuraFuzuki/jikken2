@@ -29,6 +29,9 @@ def main1():
         # HC-SR04距離センサー（Echo=24, Trigger=23）
         sensor = DistanceSensor(echo=24, trigger=23)
 
+        # timeモジュールをインポート
+        import time
+
         # オシロスコープの設定
         print("オシロスコープを設定中...")
         inst.write(":CHANnel2:DISPlay ON")  # CH2を表示
@@ -36,54 +39,120 @@ def main1():
         inst.write(":CHANnel2:OFFSet 0")  # CH2のオフセットを0V
         inst.write(":TIMebase:SCALe 0.0001")  # 時間軸を100μs/div
         inst.write(":TRIGger:SOURce CHANnel2")  # CH2をトリガーソースに
-        inst.write(":TRIGger:LEVel 0.5")  # トリガーレベルを0.5V
+        inst.write(":TRIGger:LEVel 1.0")  # トリガーレベルを1.0V（HC-SR04は3.3V信号）
         inst.write(":TRIGger:SLOPe POSitive")  # 正エッジトリガー
 
-        # シングルショット測定に設定
-        inst.write(":SINGle")
-        inst.query("*OPC?")
+        # トリガーモードをNORMALに設定
+        inst.write(":TRIGger:SWEep NORMal")
 
-        print("距離センサーの測定を開始します...")
+        print("測定準備完了")
 
-        # timeモジュールをインポート
-        import time
+        # 連続測定とシングルショットを組み合わせた方法
+        max_attempts = 5
+        acq_record = 0
 
-        # センサーの測定を実行（これによりTrigger信号とEcho信号が生成される）
-        try:
-            # 複数回測定してセンサーを確実に動作させる
-            for i in range(3):
+        for attempt in range(max_attempts):
+            print(f"\n=== 測定試行 {attempt + 1}/{max_attempts} ===")
+
+            # シングルショット測定に設定
+            inst.write(":SINGle")
+            time.sleep(0.1)
+
+            print("距離センサーの測定を開始します...")
+
+            # センサーの測定を実行（これによりTrigger信号とEcho信号が生成される）
+            try:
                 distance = sensor.distance
-                print(f"測定{i + 1}: {distance:.2f} m")
-                time.sleep(0.1)
-        except Exception as e:
-            print(f"センサー測定中にエラー: {e}")
-            # エラーが発生してもオシロスコープでの測定は続行
+                print(f"測定距離: {distance:.3f} m ({distance * 100:.1f} cm)")
 
-        # 少し待ってから波形取得
-        time.sleep(0.1)
+                # 測定後少し待機
+                time.sleep(0.2)
 
-        # CH2（Echo信号）の波形を取得
-        inst.write(":WAVeform:SOURce CHANnel2")
-        inst.write(":WAVeform:MODE NORMal")
-        inst.write(":WAVeform:FORMat BYTE")
+            except Exception as e:
+                print(f"センサー測定中にエラー: {e}")
+                continue
 
-        # データ点数を取得
-        acq_record = int(inst.query("WAVeform:POINts?"))
-        print(f"データ点数: {acq_record}")
+            # トリガー状態確認
+            try:
+                trig_status = inst.query(":TRIGger:STATus?").strip()
+                print(f"トリガー状態: {trig_status}")
+            except Exception:
+                print("トリガー状態確認不可")
+
+            # CH2（Echo信号）の波形を取得
+            inst.write(":WAVeform:SOURce CHANnel2")
+            inst.write(":WAVeform:MODE NORMal")
+            inst.write(":WAVeform:FORMat BYTE")
+
+            # データ点数を取得
+            try:
+                acq_record = int(inst.query("WAVeform:POINts?"))
+                print(f"データ点数: {acq_record}")
+
+                if acq_record > 100:  # 十分なデータが取得できた場合
+                    print("波形データの取得に成功しました")
+                    break
+                else:
+                    print("データ点数が少なすぎます。再試行...")
+                    # 連続測定に戻して再度トリガーを待つ
+                    inst.write(":RUN")
+                    time.sleep(0.5)
+
+            except Exception as e:
+                print(f"データ点数取得エラー: {e}")
+                inst.write(":RUN")
+                time.sleep(0.5)
+
+        if acq_record <= 0:
+            print("\n波形データの取得に失敗しました")
+            print("確認事項:")
+            print("- CH2にEcho信号（GPIO24）が正しく接続されているか")
+            print("- トリガーレベルが適切か（Echo信号レベルより低く設定）")
+            print("- センサーが正常に動作しているか")
+            inst.write(":RUN")
+            inst.close()
+            rm.close()
+            return
 
         # 軸のスケール情報を取得
-        x_increment = float(inst.query(":WAVeform:XINCrement?"))
-        x_origin = float(inst.query(":WAVeform:XORigin?"))
-        x_reference = float(inst.query(":WAVeform:XREFerence?"))
+        try:
+            x_increment = float(inst.query(":WAVeform:XINCrement?"))
+            x_origin = float(inst.query(":WAVeform:XORigin?"))
+            x_reference = float(inst.query(":WAVeform:XREFerence?"))
 
-        y_increment = float(inst.query(":WAVeform:YINCrement?"))
-        y_origin = float(inst.query(":WAVeform:YORigin?"))
-        y_reference = float(inst.query(":WAVeform:YREFerence?"))
+            y_increment = float(inst.query(":WAVeform:YINCrement?"))
+            y_origin = float(inst.query(":WAVeform:YORigin?"))
+            y_reference = float(inst.query(":WAVeform:YREFerence?"))
+
+            print(f"時間分解能: {x_increment * 1e6:.2f} μs/point")
+
+        except Exception as e:
+            print(f"スケール情報取得エラー: {e}")
+            inst.write(":RUN")
+            inst.close()
+            rm.close()
+            return
 
         # 波形データを取得
-        binwave = inst.query_binary_values(
-            ":WAVeform:DATA?", datatype="B", container=list, chunk_size=acq_record * 1
-        )
+        try:
+            binwave = inst.query_binary_values(
+                ":WAVeform:DATA?", datatype="B", container=list, chunk_size=acq_record
+            )
+            print(f"取得した生データ点数: {len(binwave)}")
+
+            if len(binwave) == 0:
+                print("波形データが空です")
+                inst.write(":RUN")
+                inst.close()
+                rm.close()
+                return
+
+        except Exception as e:
+            print(f"波形データ取得エラー: {e}")
+            inst.write(":RUN")
+            inst.close()
+            rm.close()
+            return
 
         # 自動測定に変更
         inst.write(":RUN")
@@ -91,15 +160,20 @@ def main1():
         rm.close()
 
         # 時間軸とデータをスケールに変換
-        time_data = [
-            (i - x_reference) * x_increment + x_origin for i in range(len(binwave))
-        ]
-        voltage_data = [
-            (data - y_reference) * y_increment + y_origin for data in binwave
-        ]
+        try:
+            time_data = [
+                (i - x_reference) * x_increment + x_origin for i in range(len(binwave))
+            ]
+            voltage_data = [
+                (data - y_reference) * y_increment + y_origin for data in binwave
+            ]
 
-        print(f"時間分解能: {x_increment * 1e6:.2f} μs/point")
-        print(f"総測定時間: {(time_data[-1] - time_data[0]) * 1e3:.2f} ms")
+            print(f"総測定時間: {(time_data[-1] - time_data[0]) * 1e3:.2f} ms")
+            print(f"電圧範囲: {min(voltage_data):.3f}V ～ {max(voltage_data):.3f}V")
+
+        except Exception as e:
+            print(f"データ変換エラー: {e}")
+            return
 
         # Echo信号のHigh持続時間を解析
         print("\n=== Echo信号のHigh持続時間解析 ===")
@@ -394,43 +468,98 @@ def main_debug():
 
         # 波形データ取得試行
         print("\n6. 波形データ取得試行...")
-        try:
-            inst.write(":WAVeform:SOURce CHANnel2")
-            inst.write(":WAVeform:MODE NORMal")
-            inst.write(":WAVeform:FORMat BYTE")
+        for attempt in range(3):
+            print(f"  試行 {attempt + 1}/3:")
+            try:
+                # シングルショット測定
+                inst.write(":SINGle")
+                time.sleep(0.1)
 
-            points = inst.query("WAVeform:POINts?")
-            print(f"  データ点数: {points.strip()}")
+                # センサー測定
+                distance = sensor.distance
+                print(f"    センサー測定: {distance:.3f} m")
+                time.sleep(0.2)
 
-            # 小さなデータ量で試行
-            inst.write(":WAVeform:POINts 1000")
-            binwave = inst.query_binary_values(
-                ":WAVeform:DATA?", datatype="B", container=list
-            )
-            print(f"  取得したデータ点数: {len(binwave)}")
-            print(f"  データ範囲: {min(binwave)} ～ {max(binwave)}")
+                # トリガー状態確認
+                trig_status = inst.query(":TRIGger:STATus?")
+                print(f"    トリガー状態: {trig_status.strip()}")
 
-            # 簡単な解析
-            if len(binwave) > 0:
-                high_count = sum(1 for x in binwave if x > 128)
-                print(
-                    f"  高レベル点数: {high_count}/{len(binwave)} ({high_count / len(binwave) * 100:.1f}%)"
-                )
+                inst.write(":WAVeform:SOURce CHANnel2")
+                inst.write(":WAVeform:MODE NORMal")
+                inst.write(":WAVeform:FORMat BYTE")
 
-        except Exception as e:
-            print(f"  波形データ取得エラー: {e}")
+                points = inst.query("WAVeform:POINts?")
+                points_int = int(points)
+                print(f"    データ点数: {points_int}")
+
+                if points_int > 0:
+                    # 小さなデータ量で試行
+                    inst.write(":WAVeform:POINts 1000")
+                    binwave = inst.query_binary_values(
+                        ":WAVeform:DATA?", datatype="B", container=list
+                    )
+                    print(f"    取得したデータ点数: {len(binwave)}")
+
+                    if len(binwave) > 0:
+                        print(f"    データ範囲: {min(binwave)} ～ {max(binwave)}")
+
+                        # 簡単な解析
+                        high_count = sum(1 for x in binwave if x > 128)
+                        print(
+                            f"    高レベル点数: {high_count}/{len(binwave)} ({high_count / len(binwave) * 100:.1f}%)"
+                        )
+
+                        if high_count > 10:
+                            print("    ✓ Echo信号らしきデータを検出しました")
+                            break
+                        else:
+                            print("    ⚠ 信号レベルが低い可能性があります")
+                    else:
+                        print("    ✗ データが空です")
+                else:
+                    print("    ✗ データ点数が0です")
+
+                # 連続測定に戻す
+                inst.write(":RUN")
+                time.sleep(0.5)
+
+            except Exception as e:
+                print(f"    エラー: {e}")
+                inst.write(":RUN")
+                time.sleep(0.5)
 
         # 自動測定に戻す
         inst.write(":RUN")
         inst.close()
         rm.close()
 
-        print("\n=== デバッグ完了 ===")
-        print("問題が解決しない場合は以下を確認してください:")
-        print("- GPIO接続: Echo=GPIO24, Trigger=GPIO23")
-        print("- オシロスコープ接続: CH2にEcho信号を接続")
-        print("- 電源供給: センサーに5Vを供給")
-        print("- 測定環境: 障害物との距離が2cm～400cm")
+        print("\n=== 診断結果とトラブルシューティング ===")
+        print("問題が解決しない場合は以下を順番に確認してください:")
+        print()
+        print("【基本接続】")
+        print("1. GPIO接続: Echo=GPIO24, Trigger=GPIO23")
+        print("2. オシロスコープ接続: CH2にEcho信号（GPIO24）を接続")
+        print("3. 電源供給: センサーに5V電源とGND接続")
+        print("4. プローブのGND: ブレッドボードのGNDに接続")
+        print()
+        print("【オシロスコープ設定】")
+        print("5. CH2を有効化（表示ON）")
+        print("6. 時間軸: 100μs/div または 500μs/div")
+        print("7. 電圧軸: 1V/div または 2V/div")
+        print("8. トリガー設定:")
+        print("   - ソース: CH2")
+        print("   - レベル: 0.5V～1.5V（Echo信号より少し低く）")
+        print("   - スロープ: 正（↑）")
+        print("   - モード: NORMAL または AUTO")
+        print()
+        print("【測定環境】")
+        print("9. 障害物との距離: 5cm～100cm（明確な反射面）")
+        print("10. ノイズ対策: 他の電子機器から離す")
+        print()
+        print("【デバッグのヒント】")
+        print("• オシロスコープで手動でEcho信号が見えるか確認")
+        print("• AUTO測定で信号波形を目視確認")
+        print("• 異なる距離で信号の変化を確認")
 
     except ImportError as e:
         print(f"ライブラリインポートエラー: {e}")
