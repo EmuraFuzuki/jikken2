@@ -178,6 +178,28 @@ def main1():
         # Echo信号のHigh持続時間を解析
         print("\n=== Echo信号のHigh持続時間解析 ===")
 
+        import matplotlib.pyplot as plt
+
+        # Echo信号をとりあえず表示
+        plt.figure(figsize=(12, 6))
+        plt.plot(
+            [t * 1e6 for t in time_data],
+            voltage_data,
+            label="Echo Signal",
+            color="blue",
+            linewidth=1,
+        )
+        plt.xlabel("Time [μs]")
+        plt.ylabel("Voltage [V]")
+        plt.title("Echo Signal Waveform")
+        plt.axhline(
+            y=0.1, color="red", linestyle="--", label="Threshold (0.1V)", alpha=0.7
+        )
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        # Echo信号の解析関数
+
         def analyze_echo_signal(time_data, voltage_data):
             """Echo信号のHigh持続時間を解析する"""
 
