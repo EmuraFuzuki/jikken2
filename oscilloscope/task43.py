@@ -5,6 +5,7 @@ def main1():
     # import matplotlib.pyplot as plt
     from gpiozero import DistanceSensor
     import time
+    import japanize_matplotlib
     # import os
 
     print("=== 課題43: 距離計算式の検証 ===")
