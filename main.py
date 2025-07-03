@@ -1,4 +1,5 @@
-from oscilloscope.task48 import main1
+from Device.motion_sensor_test import main1
+
 
 if __name__ == "__main__":
     try:
