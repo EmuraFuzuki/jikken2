@@ -1,4 +1,4 @@
-from Device.motion_sensor_test import main1
+from Device.MPU6050test import main1
 
 
 if __name__ == "__main__":
