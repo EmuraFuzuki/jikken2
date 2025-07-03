@@ -15,20 +15,13 @@ def main1():
     print("Ready")
 
     try:
-        current_state = 0
         while True:
             # センサーの状態を読み込む
             sensor_state = GPIO.input(SENSOR_PIN)
-
-            # 状態が変化した場合のみメッセージを表示
-            if sensor_state != current_state:
-                if sensor_state == 1:
-                    # 動きを検知した場合
-                    print("Motion Detected!")
-                else:
-                    # 動きがなくなった場合
-                    print("No Motion")
-                current_state = sensor_state
+            if sensor_state == 1:
+                print("Motion Detected!")
+            else:
+                print("................")
 
             time.sleep(0.1)  # 0.1秒待機
 
