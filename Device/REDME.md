@@ -1,0 +1,3 @@
+# modules
+- RPi.GPIO
+- time
