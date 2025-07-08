@@ -7,8 +7,8 @@ Raspberry Pi 手ぶくろ入力装置 メインプログラム
 """
 
 import time
-from sensors import MPU6050, HCSR04, AirTapDetector, RangeTimer
-from gpio_controller import GPIOController
+from Device.utils.sensors import MPU6050, HCSR04, AirTapDetector, RangeTimer
+from Device.utils.gpio_controller import GPIOController
 from config import LOOP_DT
 
 
