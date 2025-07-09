@@ -55,7 +55,8 @@
 
 ## 3. Python ソースコード
 
-<!-- ![demo.py](C:\Users\fengy\programming\jikken2\Device\docx\demo.py) -->
+[main.py](C:\Users\fengy\programming\jikken2\Device\docx\main.py)
+
 
 
 ### 主要パラメータの調整ポイント
