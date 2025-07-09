@@ -45,17 +45,22 @@ class MPU6050:
 
     def read_gyro(self):
         """ジャイロセンサーの値を読み取る"""
+        try:
 
-        def _read_word(reg):
-            high = self.bus.read_byte_data(MPU_ADDR, reg)
-            low = self.bus.read_byte_data(MPU_ADDR, reg + 1)
-            val = (high << 8) | low
-            return val - 65536 if val & 0x8000 else val
+            def _read_word(reg):
+                high = self.bus.read_byte_data(MPU_ADDR, reg)
+                low = self.bus.read_byte_data(MPU_ADDR, reg + 1)
+                val = (high << 8) | low
+                return val - 65536 if val & 0x8000 else val
 
-        gx = _read_word(GYRO_XOUT_H) / GYRO_SCALE
-        gy = _read_word(GYRO_XOUT_H + 2) / GYRO_SCALE
-        gz = _read_word(GYRO_XOUT_H + 4) / GYRO_SCALE
-        return gx, gy, gz
+            gx = _read_word(GYRO_XOUT_H) / GYRO_SCALE
+            gy = _read_word(GYRO_XOUT_H + 2) / GYRO_SCALE
+            gz = _read_word(GYRO_XOUT_H + 4) / GYRO_SCALE
+            return gx, gy, gz
+        # 例外処理
+        except Exception as e:
+            print(f"Error reading MPU6050: {e}")
+            return 0.0, 0.0, 0.0
 
 
 class HCSR04:
