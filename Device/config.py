@@ -5,9 +5,9 @@
 """
 
 # GPIO ピン番号
-LED_GYRO_X = 17  # 黄
-LED_GYRO_Y = 27  # 青
-LED_GYRO_Z = 22  # 緑
+LED_GYRO_X = 16  # 黄
+LED_GYRO_Y = 20  # 青
+LED_GYRO_Z = 21  # 緑
 LED_DIST_1 = 5  # 赤1
 LED_DIST_2 = 6  # 赤2
 LED_DIST_3 = 13  # 赤3
