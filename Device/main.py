@@ -18,12 +18,14 @@ class GloveInputDevice:
     def __init__(self):
         print("手ぶくろ入力装置を初期化しています...")
 
-        # センサーとコントローラーの初期化
+        # GPIO制御を最初に初期化（GPIO.setmode()を実行）
+        self.gpio_controller = GPIOController()
+
+        # その後でセンサーとコントローラーの初期化
         self.mpu6050 = MPU6050()
         self.hcsr04 = HCSR04()
         self.air_tap_detector = AirTapDetector()
         self.range_timer = RangeTimer(hold_sec=1.0)
-        self.gpio_controller = GPIOController()
 
         print("初期化完了")
 
