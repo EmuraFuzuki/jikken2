@@ -89,8 +89,6 @@ class HCSR04:
 
         pulse_len = pulse_end - pulse_start
         distance_cm = (pulse_len * SOUND_SPEED) / 2.0
-        if type(distance_cm) is not float:
-            distance_cm = 0.0
         return distance_cm
 
 

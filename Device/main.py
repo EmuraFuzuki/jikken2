@@ -62,6 +62,7 @@ class GloveInputDevice:
                         self.gpio_controller.set_distance_leds(range_value)
 
                 # デバッグ出力（必要に応じて）
+                print(distance)
                 print(
                     f"Gyro: X={gx:.1f}, Y={gy:.1f}, Z={gz:.1f}, Distance={distance:.1f if distance else 'None'}"
                 )
