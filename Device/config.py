@@ -32,8 +32,8 @@ SOUND_SPEED = 34300.0  # [cm/s]
 TAP_WINDOW = 0.30  # [s] 観測窓
 TAP_NEAR = 5.0  # [cm] 近距離しきい
 TAP_FAR = 10.0  # [cm] 遠距離しきい
-BLINK_TIMES = 3
-BLINK_INTERVAL = 0.15  # [s]
+BLINK_TIMES = 3  # 点滅回数
+BLINK_INTERVAL = 0.15  # [s] 点滅間隔
 
 # メインループ設定
 LOOP_DT = 0.05  # 20 Hz
