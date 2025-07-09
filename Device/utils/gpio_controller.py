@@ -13,7 +13,18 @@ except ImportError:
     )
 
 import time
-from config import *
+from config import (
+    OUTPUT_LEDS,
+    LED_GYRO_X,
+    LED_GYRO_Y,
+    LED_GYRO_Z,
+    LED_DIST_1,
+    LED_DIST_2,
+    LED_DIST_3,
+    GYRO_THRESHOLD,
+    BLINK_TIMES,
+    BLINK_INTERVAL,
+)
 
 
 class GPIOController:

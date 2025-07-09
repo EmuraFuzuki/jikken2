@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from config import (
+    I2C_BUS,
+    MPU_ADDR,
+    PWR_MGMT_1,
+    GYRO_XOUT_H,
+    GYRO_SCALE,
+    TRIG_PIN,
+    ECHO_PIN,
+    SOUND_SPEED,
+    TAP_NEAR,
+    TAP_FAR,
+)
+
 """
 センサー関連のクラス
 """
@@ -20,7 +33,6 @@ except ImportError:
 
 import time
 from collections import deque
-from config import *
 
 
 class MPU6050:
