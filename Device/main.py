@@ -71,6 +71,9 @@ class GloveInputDevice:
                         # 3. 距離レンジが同一である継続時間が1秒以上の場合
                         if self.range_timer.update(range_value, t_now):
                             print(f"距離レンジ: {range_value}, 距離: {distance:.1f} cm")
+                            # 範囲外はスキップ
+                            if range_value < 0:
+                                continue
                             # LEDを非ブロッキングで1秒間点灯
                             self.gpio_controller.set_distance_leds_non_blocking(
                                 range_value
