@@ -128,7 +128,7 @@ class AirTapDetector:
             return False
 
         # 3. 速度を計算して閾値をチェック
-        total_distance_change = (start_distance - end_distance) / 10  # 近づいた距離
+        total_distance_change = start_distance - end_distance  # 近づいた距離
         total_time = times[0] - times[-1]  # 経過時間
         print(f"Distance: {total_distance_change}, Time: {total_time}")
 
