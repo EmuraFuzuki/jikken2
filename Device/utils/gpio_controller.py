@@ -143,4 +143,4 @@ class GPIOController:
                 return range_config["level"]
 
         # 全ての範囲外（遠距離）の場合
-        return 4  # 範囲外の遠距離として4を返す
+        return -1  # 範囲外の遠距離として-1を返す

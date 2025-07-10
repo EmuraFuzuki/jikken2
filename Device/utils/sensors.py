@@ -157,7 +157,7 @@ class RangeTimer:
         self.last_triggered_time = None
 
     def update(self, rng, now):
-        """rng: None,1(0-5),2(5-10),3(10-15),4(範囲外)"""
+        """rng: None,1(0-5),2(5-10),3(10-15),-1(範囲外)"""
         if rng == self.current_range:
             # 同じレンジに継続中
             if (
