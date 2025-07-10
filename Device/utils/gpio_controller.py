@@ -51,13 +51,29 @@ class GPIOController:
         self.led_active = False
 
     def set_gyro_leds(self, gx, gy, gz):
-        """ジャイロセンサーの値に応じてLEDを制御"""
+        """ジャイロセンサーの値に応じてLEDを制御（最大角速度の軸のみ点灯）"""
         if GPIO is None:
             return
 
-        GPIO.output(LED_GYRO_X, GPIO.HIGH if abs(gx) >= GYRO_THRESHOLD else GPIO.LOW)
-        GPIO.output(LED_GYRO_Y, GPIO.HIGH if abs(gy) >= GYRO_THRESHOLD else GPIO.LOW)
-        GPIO.output(LED_GYRO_Z, GPIO.HIGH if abs(gz) >= GYRO_THRESHOLD else GPIO.LOW)
+        # 全ての軸の絶対値を取得
+        abs_gx = abs(gx)
+        abs_gy = abs(gy)
+        abs_gz = abs(gz)
+
+        # 最大角速度を取得
+        max_gyro = max(abs_gx, abs_gy, abs_gz)
+
+        # 閾値以上の場合のみ処理
+        if max_gyro >= GYRO_THRESHOLD:
+            # 最大角速度の軸のみ点灯
+            GPIO.output(LED_GYRO_X, GPIO.HIGH if abs_gx == max_gyro else GPIO.LOW)
+            GPIO.output(LED_GYRO_Y, GPIO.HIGH if abs_gy == max_gyro else GPIO.LOW)
+            GPIO.output(LED_GYRO_Z, GPIO.HIGH if abs_gz == max_gyro else GPIO.LOW)
+        else:
+            # 全ての軸が閾値未満の場合は全て消灯
+            GPIO.output(LED_GYRO_X, GPIO.LOW)
+            GPIO.output(LED_GYRO_Y, GPIO.LOW)
+            GPIO.output(LED_GYRO_Z, GPIO.LOW)
 
     def set_distance_leds(self, rng):
         """距離レンジに応じてLEDを制御 rng: 0=None,1,2,3"""
