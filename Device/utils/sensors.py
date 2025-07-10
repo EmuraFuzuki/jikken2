@@ -11,6 +11,7 @@ from config import (
     SOUND_SPEED,
     TAP_NEAR,
     TAP_FAR,
+    RANGE_HOLD_TIME,
 )
 
 """
@@ -120,13 +121,13 @@ class AirTapDetector:
 class RangeTimer:
     """距離レンジ管理クラス"""
 
-    def __init__(self, hold_sec=1.0):
+    def __init__(self, hold_sec=RANGE_HOLD_TIME):
         self.hold_sec = hold_sec
         self.current_range = None
         self.enter_time = None
 
     def update(self, rng, now):
-        """rng: 0=None,1(0-5),2(5-10),3(10-15)"""
+        """rng: None,1(0-5),2(5-10),3(10-15),4(範囲外)"""
         if rng == self.current_range:
             # 継続中
             return (
@@ -139,3 +140,7 @@ class RangeTimer:
             self.current_range = rng
             self.enter_time = now
             return False
+
+    def reset_timer(self):
+        """継続時間をリセット"""
+        self.enter_time = None

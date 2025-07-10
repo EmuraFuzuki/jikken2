@@ -25,7 +25,7 @@ class GloveInputDevice:
         self.mpu6050 = MPU6050()
         self.hcsr04 = HCSR04()
         self.air_tap_detector = AirTapDetector()
-        self.range_timer = RangeTimer(hold_sec=1.0)
+        self.range_timer = RangeTimer()
 
         print("初期化完了")
 
@@ -48,18 +48,26 @@ class GloveInputDevice:
                 distance = self.hcsr04.measure_distance()
 
                 if distance is not None:
-                    # エアタップ検出
+                    # 1. エアタップ検出
                     self.air_tap_detector.add_distance(distance)
-                    if self.air_tap_detector.check_air_tap():
+                    air_tap_detected = self.air_tap_detector.check_air_tap()
+
+                    if air_tap_detected:
                         print(f"エアタップ検出！ 距離: {distance:.1f} cm")
                         self.gpio_controller.blink_red()
                         self.air_tap_detector.clear_history()
+                        # エアタップ検出時は距離レンジ処理をスキップ
+                    else:
+                        # 2. 距離レンジ測定（エアタップが検出されなかった場合のみ）
+                        range_value = self.gpio_controller.get_distance_range(distance)
 
-                    # 距離レンジ制御
-                    range_value = self.gpio_controller.get_distance_range(distance)
-                    if self.range_timer.update(range_value, t_now):
-                        print(f"距離レンジ: {range_value}, 距離: {distance:.1f} cm")
-                        self.gpio_controller.set_distance_leds(range_value)
+                        # 3. 距離レンジが同一である継続時間が1秒以上の場合
+                        if self.range_timer.update(range_value, t_now):
+                            print(f"距離レンジ: {range_value}, 距離: {distance:.1f} cm")
+                            # LEDを1秒間点灯
+                            self.gpio_controller.set_distance_leds_timed(range_value)
+                            # 距離レンジの継続時間をリセット
+                            self.range_timer.reset_timer()
 
                 # デバッグ出力（必要に応じて）
                 # print(

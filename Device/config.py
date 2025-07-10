@@ -35,5 +35,14 @@ TAP_FAR = 10.0  # [cm] 遠距離しきい
 BLINK_TIMES = 3  # 点滅回数
 BLINK_INTERVAL = 0.15  # [s] 点滅間隔
 
+# 距離レンジ設定
+DISTANCE_RANGES = [
+    {"min": 0.0, "max": 5.0, "level": 1},  # レンジ1: 0-5cm
+    {"min": 5.0, "max": 10.0, "level": 2},  # レンジ2: 5-10cm
+    {"min": 10.0, "max": 15.0, "level": 3},  # レンジ3: 10-15cm
+]
+RANGE_HOLD_TIME = 1.0  # [s] レンジ継続時間
+LED_ON_TIME = 1.0  # [s] LED点灯時間
+
 # メインループ設定
 LOOP_DT = 0.05  # 20 Hz

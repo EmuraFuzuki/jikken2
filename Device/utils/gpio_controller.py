@@ -26,6 +26,8 @@ from config import (
     BLINK_INTERVAL,
     TAP_NEAR,
     TAP_FAR,
+    DISTANCE_RANGES,
+    LED_ON_TIME,
 )
 
 
@@ -64,6 +66,23 @@ class GPIOController:
         for i, pin in enumerate(leds, start=1):
             GPIO.output(pin, GPIO.HIGH if rng and i <= rng else GPIO.LOW)
 
+    def set_distance_leds_timed(self, rng, duration=LED_ON_TIME):
+        """距離レンジに応じてLEDを指定時間点灯"""
+        if GPIO is None:
+            return
+
+        leds = (LED_DIST_1, LED_DIST_2, LED_DIST_3)
+        # LEDを点灯
+        for i, pin in enumerate(leds, start=1):
+            GPIO.output(pin, GPIO.HIGH if rng and i <= rng else GPIO.LOW)
+
+        # 指定時間待機
+        time.sleep(duration)
+
+        # LEDを消灯
+        for pin in leds:
+            GPIO.output(pin, GPIO.LOW)
+
     def blink_red(self, times=BLINK_TIMES):
         """赤色LEDを点滅させる"""
         if GPIO is None:
@@ -85,14 +104,13 @@ class GPIOController:
 
     @staticmethod
     def get_distance_range(distance):
-        """距離を範囲に変換"""
+        """距離を範囲に変換（設定ファイルから読み込み）"""
         if distance is None:
             return None
-        elif 0.0 <= distance < 5.0:
-            return 1
-        elif 5.0 <= distance < 10.0:
-            return 2
-        elif 10.0 <= distance < 15.0:
-            return 3
-        else:
-            return None
+
+        for range_config in DISTANCE_RANGES:
+            if range_config["min"] <= distance < range_config["max"]:
+                return range_config["level"]
+
+        # 全ての範囲外（遠距離）の場合
+        return 4  # 範囲外の遠距離として4を返す
