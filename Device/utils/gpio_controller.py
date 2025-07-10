@@ -50,6 +50,13 @@ class GPIOController:
         self.led_end_time = 0
         self.led_active = False
 
+        # 非ブロッキング点滅制御用の変数
+        self.blink_active = False
+        self.blink_count = 0
+        self.blink_max_count = 0
+        self.blink_next_time = 0
+        self.blink_state = False  # True: 点灯, False: 消灯
+
     def set_gyro_leds(self, gx, gy, gz):
         """ジャイロセンサーの値に応じてLEDを制御（最大角速度の軸のみ点灯）"""
         if GPIO is None:
@@ -120,27 +127,60 @@ class GPIOController:
         if GPIO is None:
             return False
 
+        led_just_turned_off = False
+
+        # 距離レンジLEDの更新
         if self.led_active and time.time() >= self.led_end_time:
             # LEDを消灯
             leds = (LED_DIST_1, LED_DIST_2, LED_DIST_3)
             for pin in leds:
                 GPIO.output(pin, GPIO.LOW)
             self.led_active = False
-            return True  # LED消灯完了を通知
-        return False  # まだLED点灯中または非アクティブ
+            led_just_turned_off = True
+
+        # 点滅制御の更新
+        self.update_blink()
+
+        return led_just_turned_off
 
     def blink_red(self, times=BLINK_TIMES):
-        """赤色LEDを点滅させる"""
+        """赤色LEDを非ブロッキングで点滅させる"""
         if GPIO is None:
             return
 
-        for _ in range(times):
-            for pin in (LED_DIST_1, LED_DIST_2, LED_DIST_3):
-                GPIO.output(pin, GPIO.HIGH)
-            time.sleep(BLINK_INTERVAL)
-            for pin in (LED_DIST_1, LED_DIST_2, LED_DIST_3):
-                GPIO.output(pin, GPIO.LOW)
-            time.sleep(BLINK_INTERVAL)
+        # 点滅制御の初期化
+        self.blink_active = True
+        self.blink_count = 0
+        self.blink_max_count = times * 2  # 点灯・消灯を1セットとして2倍
+        self.blink_next_time = time.time()
+        self.blink_state = True  # 最初は点灯から開始
+
+    def update_blink(self):
+        """非ブロッキング点滅制御の更新"""
+        if not self.blink_active or GPIO is None:
+            return
+
+        current_time = time.time()
+        if current_time >= self.blink_next_time:
+            if self.blink_state:
+                # 点灯
+                for pin in (LED_DIST_1, LED_DIST_2, LED_DIST_3):
+                    GPIO.output(pin, GPIO.HIGH)
+            else:
+                # 消灯
+                for pin in (LED_DIST_1, LED_DIST_2, LED_DIST_3):
+                    GPIO.output(pin, GPIO.LOW)
+
+            self.blink_count += 1
+            self.blink_state = not self.blink_state
+            self.blink_next_time = current_time + BLINK_INTERVAL
+
+            # 点滅完了チェック
+            if self.blink_count >= self.blink_max_count:
+                self.blink_active = False
+                # 最終的に全て消灯
+                for pin in (LED_DIST_1, LED_DIST_2, LED_DIST_3):
+                    GPIO.output(pin, GPIO.LOW)
 
     def cleanup(self):
         """GPIO クリーンアップ"""

@@ -61,6 +61,12 @@ class GloveInputDevice:
 
                     if air_tap_detected:
                         print(f"エアタップ検出！ 距離: {distance:.1f} cm")
+                        # 距離レンジLEDが点灯中の場合は強制消灯
+                        if self.gpio_controller.led_active:
+                            self.gpio_controller.led_active = False
+                            # 距離LEDを強制消灯
+                            self.gpio_controller.set_distance_leds(0)
+
                         self.gpio_controller.blink_red()
                         self.air_tap_detector.clear_history()
                         # エアタップ検出時は距離レンジ処理をスキップ
@@ -74,17 +80,21 @@ class GloveInputDevice:
                             # 範囲外はスキップ
                             if range_value < 0:
                                 continue
-                            # LEDを非ブロッキングで1秒間点灯
-                            self.gpio_controller.set_distance_leds_non_blocking(
-                                range_value
-                            )
+                            # 点滅中でない場合のみLEDを点灯
+                            if not self.gpio_controller.blink_active:
+                                # LEDを非ブロッキングで1秒間点灯
+                                self.gpio_controller.set_distance_leds_non_blocking(
+                                    range_value
+                                )
                             # 距離レンジの継続時間をリセット（同じレンジでも再判定可能にする）
                             self.range_timer.reset_timer()
 
                 # デバッグ出力（必要に応じて）
-                # print(
-                #     f"Gyro: X={gx:.1f}, Y={gy:.1f}, Z={gz:.1f}, Distance={distance if distance else 'None'}"
-                # )
+                if distance is not None and len(self.air_tap_detector.dist_history) > 0:
+                    print(
+                        f"距離: {distance:.1f}cm, 履歴数: {len(self.air_tap_detector.dist_history)}, "
+                        f"LED点灯中: {self.gpio_controller.led_active}, 点滅中: {self.gpio_controller.blink_active}"
+                    )
 
                 time.sleep(LOOP_DT)
 

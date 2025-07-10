@@ -107,8 +107,8 @@ class AirTapDetector:
         self.time_history.appendleft(current_time)
 
     def check_air_tap(self):
-        """履歴からエアタップを判定（0~10cm範囲内で速度基準）"""
-        if len(self.dist_history) < 5:  # 最低5点のデータが必要
+        """履歴からエアタップを判定（0~15cm範囲内で速度基準）"""
+        if len(self.dist_history) < 3:  # 最低3点のデータが必要（反応性向上）
             return False
 
         distances = list(self.dist_history)
@@ -126,18 +126,20 @@ class AirTapDetector:
         if start_distance <= end_distance:
             return False
 
-        # 3. 速度を計算して閾値をチェック
-        total_distance_change = start_distance - end_distance  # 近づいた距離
+        # 3. 十分な距離変化があるかチェック（最低2cm以上近づく必要）
+        distance_change = start_distance - end_distance
+        if distance_change < 2.0:
+            return False
+
+        # 4. 速度を計算して閾値をチェック
         total_time = times[0] - times[-1]  # 経過時間
 
         if total_time <= 0:
             return False
 
-        approach_speed = (
-            total_distance_change / total_time
-        )  # cm/s（正の値は近づく速度）
+        approach_speed = distance_change / total_time  # cm/s（正の値は近づく速度）
 
-        # 4. 十分な速度で近づいているかチェック
+        # 5. 十分な速度で近づいているかチェック
         return approach_speed >= TAP_MIN_SPEED
 
     def clear_history(self):
