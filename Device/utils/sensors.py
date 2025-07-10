@@ -115,9 +115,9 @@ class AirTapDetector:
         times = list(self.time_history)
 
         # 1. 全ての距離が検出範囲内にあるかチェック
-        # if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
-        #     print("Distance out of range for air tap detection.")
-        #     return False
+        if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
+            print("Distance out of range for air tap detection.")
+            return False
 
         # 2. 手を近づける動きかチェック
         start_distance = distances[-1]  # 最も古い距離（開始点）
