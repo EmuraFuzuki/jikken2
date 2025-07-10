@@ -138,6 +138,7 @@ class AirTapDetector:
         )  # cm/s（正の値は近づく速度）
 
         # 4. 十分な速度で近づいているかチェック
+        print(f"Approach speed: {approach_speed:.2f} cm/s")
         return approach_speed >= TAP_MIN_SPEED
 
     def clear_history(self):
