@@ -109,6 +109,7 @@ class AirTapDetector:
     def check_air_tap(self):
         """履歴からエアタップを判定（0~10cm範囲内で速度基準）"""
         if len(self.dist_history) < 5:  # 最低5点のデータが必要
+            print("Not enough data points for air tap detection.")
             return False
 
         distances = list(self.dist_history)
@@ -116,6 +117,7 @@ class AirTapDetector:
 
         # 1. 全ての距離が検出範囲内（0~10cm）にあるかチェック
         if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
+            print("Distance out of range for air tap detection.")
             return False
 
         # 2. 手を近づける動きかチェック
@@ -124,6 +126,7 @@ class AirTapDetector:
 
         # 距離が減少していない（近づいていない）場合はエアタップではない
         if start_distance <= end_distance:
+            print("No approach detected (start distance <= end distance).")
             return False
 
         # 3. 速度を計算して閾値をチェック
@@ -131,6 +134,7 @@ class AirTapDetector:
         total_time = times[-1] - times[0]  # 経過時間
 
         if total_time <= 0:
+            print("Invalid time interval for air tap detection.")
             return False
 
         approach_speed = (
