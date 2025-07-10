@@ -9,8 +9,8 @@ from config import (
     TRIG_PIN,
     ECHO_PIN,
     SOUND_SPEED,
-    TAP_NEAR,
-    TAP_FAR,
+    TAP_DETECTION_RANGE,
+    TAP_MIN_SPEED,
     RANGE_HOLD_TIME,
 )
 
@@ -107,22 +107,26 @@ class AirTapDetector:
         self.time_history.appendleft(current_time)
 
     def check_air_tap(self):
-        """履歴からエアタップを判定（手を近づける動きのみ、速度基準）"""
+        """履歴からエアタップを判定（0~10cm範囲内で速度基準）"""
         if len(self.dist_history) < 5:  # 最低5点のデータが必要
             return False
 
         distances = list(self.dist_history)
         times = list(self.time_history)
 
-        # 1. 手を近づける動きかチェック（遠い位置から近い位置への移動）
+        # 1. 全ての距離が検出範囲内（0~10cm）にあるかチェック
+        if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
+            return False
+
+        # 2. 手を近づける動きかチェック
         start_distance = distances[-1]  # 最も古い距離（開始点）
         end_distance = distances[0]  # 最新の距離（終了点）
 
-        # 遠い位置（TAP_FAR以上）から近い位置（TAP_NEAR以下）への移動でなければエアタップではない
-        if not (start_distance > TAP_FAR and end_distance < TAP_NEAR):
+        # 距離が減少していない（近づいていない）場合はエアタップではない
+        if start_distance <= end_distance:
             return False
 
-        # 2. 速度を計算して閾値をチェック
+        # 3. 速度を計算して閾値をチェック
         total_distance_change = start_distance - end_distance  # 近づいた距離
         total_time = times[-1] - times[0]  # 経過時間
 
@@ -133,10 +137,8 @@ class AirTapDetector:
             total_distance_change / total_time
         )  # cm/s（正の値は近づく速度）
 
-        # 3. 十分な速度で近づいているかチェック（例：15 cm/s以上）
-        min_approach_speed = 15.0  # cm/s
-
-        return approach_speed >= min_approach_speed
+        # 4. 十分な速度で近づいているかチェック
+        return approach_speed >= TAP_MIN_SPEED
 
     def clear_history(self):
         """履歴をクリア"""
