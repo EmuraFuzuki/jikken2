@@ -116,7 +116,7 @@ class AirTapDetector:
         times = list(self.time_history)
         print(f"Distances: {distances}, Times: {times}")
 
-        # 1. 全ての距離が検出範囲内（0~10cm）にあるかチェック
+        # 1. 全ての距離が検出範囲内にあるかチェック
         # if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
         #     print("Distance out of range for air tap detection.")
         #     return False
@@ -132,7 +132,8 @@ class AirTapDetector:
 
         # 3. 速度を計算して閾値をチェック
         total_distance_change = start_distance - end_distance  # 近づいた距離
-        total_time = times[-1] - times[0]  # 経過時間
+        # total_time = times[-1] - times[0]  # 経過時間/
+        total_time = sum(times)
 
         if total_time <= 0:
             print("Invalid time interval for air tap detection.")
