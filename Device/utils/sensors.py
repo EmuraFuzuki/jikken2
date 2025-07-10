@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+センサー制御クラス
+MPU6050ジャイロセンサとHC-SR04超音波センサの制御
+"""
+
 from config import (
     I2C_BUS,
     MPU_ADDR,
@@ -14,26 +19,18 @@ from config import (
     RANGE_HOLD_TIME,
 )
 
-"""
-センサー関連のクラス
-"""
+import time
+from collections import deque
 
 try:
     import smbus
 except ImportError:
     smbus = None
-    print("Warning: smbus module not found. This module is required for Raspberry Pi.")
 
 try:
     import RPi.GPIO as GPIO
 except ImportError:
     GPIO = None
-    print(
-        "Warning: RPi.GPIO module not found. This module is required for Raspberry Pi."
-    )
-
-import time
-from collections import deque
 
 
 class MPU6050:
@@ -59,8 +56,7 @@ class MPU6050:
             gz = _read_word(GYRO_XOUT_H + 4) / GYRO_SCALE
             return gx, gy, gz
         # 例外処理
-        except Exception as e:
-            print(f"Error reading MPU6050: {e}")
+        except Exception:
             return 0.0, 0.0, 0.0
 
 
@@ -94,7 +90,7 @@ class HCSR04:
 
 
 class AirTapDetector:
-    """エアタップ検出クラス（手を近づける動きのみ、速度基準）"""
+    """エアタップ検出クラス（手を近づける動作を速度基準で検出）"""
 
     def __init__(self):
         self.dist_history = deque(maxlen=10)  # 距離履歴
@@ -107,39 +103,39 @@ class AirTapDetector:
         self.time_history.appendleft(current_time)
 
     def check_air_tap(self):
-        """履歴からエアタップを判定（0~15cm範囲内で速度基準）"""
-        if len(self.dist_history) < 3:  # 最低3点のデータが必要（反応性向上）
+        """履歴からエアタップを判定"""
+        if len(self.dist_history) < 3:  # 最低3点のデータが必要
             return False
 
         distances = list(self.dist_history)
         times = list(self.time_history)
 
-        # 1. 全ての距離が検出範囲内にあるかチェック
+        # 全ての距離が検出範囲内にあるかチェック
         if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
             return False
 
-        # 2. 手を近づける動きかチェック
-        start_distance = distances[-1]  # 最も古い距離（開始点）
-        end_distance = distances[0]  # 最新の距離（終了点）
+        # 手を近づける動きかチェック
+        start_distance = distances[-1]  # 最も古い距離
+        end_distance = distances[0]  # 最新の距離
 
-        # 距離が減少していない（近づいていない）場合はエアタップではない
+        # 距離が減少していない場合はエアタップではない
         if start_distance <= end_distance:
             return False
 
-        # 3. 十分な距離変化があるかチェック（最低2cm以上近づく必要）
+        # 十分な距離変化があるかチェック（最低2cm以上近づく必要）
         distance_change = start_distance - end_distance
         if distance_change < 2.0:
             return False
 
-        # 4. 速度を計算して閾値をチェック
-        total_time = times[0] - times[-1]  # 経過時間
+        # 速度を計算して閾値をチェック
+        total_time = times[0] - times[-1]
 
         if total_time <= 0:
             return False
 
-        approach_speed = distance_change / total_time  # cm/s（正の値は近づく速度）
+        approach_speed = distance_change / total_time  # cm/s
 
-        # 5. 十分な速度で近づいているかチェック
+        # 十分な速度で近づいているかチェック
         return approach_speed >= TAP_MIN_SPEED
 
     def clear_history(self):
@@ -159,7 +155,9 @@ class RangeTimer:
         self.last_triggered_time = None
 
     def update(self, rng, now):
-        """rng: None,1(0-5),2(5-10),3(10-15),-1(範囲外)"""
+        """レンジの更新と判定
+        rng: None,1(0-5),2(5-10),3(10-15),-1(範囲外)
+        """
         if rng == self.current_range:
             # 同じレンジに継続中
             if (
@@ -186,5 +184,5 @@ class RangeTimer:
         # トリガーされた情報を記録
         self.last_triggered_range = self.current_range
         self.last_triggered_time = time.time()
-        # 新しい判定のために enter_time をリセット
+        # 新しい判定のためにenter_timeをリセット
         self.enter_time = time.time()

@@ -15,15 +15,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
     from main import GloveInputDevice
 
-    print("モジュールのインポートに成功しました")
-
     # Raspberry Pi環境でない場合の簡単なテスト
     if os.name != "posix":
-        print("Windows環境で実行されています")
-        print("Raspberry Pi環境では実際のセンサーデータが利用されます")
+        print("Windows環境での実行を検出しました")
 
-    print("\n=== 手ぶくろ入力装置テスト ===")
-    print("実際のデバイス実行には Raspberry Pi が必要です")
+    print("=== 手ぶくろ入力装置テスト ===")
     print("テストを開始します...")
 
     # デバイスの初期化テスト
@@ -38,9 +34,8 @@ try:
     try:
         while time.time() - start_time < test_duration:
             # 模擬的なセンサーデータでテスト
-            print(
-                f"テスト実行中... 残り時間: {test_duration - (time.time() - start_time):.1f}秒"
-            )
+            remaining_time = test_duration - (time.time() - start_time)
+            print(f"テスト実行中... 残り時間: {remaining_time:.1f}秒")
             time.sleep(1.0)
     except KeyboardInterrupt:
         print("\nテストが中断されました")

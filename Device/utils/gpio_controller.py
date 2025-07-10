@@ -8,9 +8,6 @@ try:
     import RPi.GPIO as GPIO
 except ImportError:
     GPIO = None
-    print(
-        "Warning: RPi.GPIO module not found. This module is required for Raspberry Pi."
-    )
 
 import time
 from config import (
@@ -34,9 +31,6 @@ class GPIOController:
 
     def __init__(self):
         if GPIO is None:
-            print(
-                "Warning: GPIO module not available. GPIO operations will be skipped."
-            )
             return
 
         GPIO.setmode(GPIO.BCM)
@@ -58,7 +52,7 @@ class GPIOController:
         self.blink_state = False  # True: 点灯, False: 消灯
 
     def set_gyro_leds(self, gx, gy, gz):
-        """ジャイロセンサーの値に応じてLEDを制御（最大角速度の軸のみ点灯）"""
+        """ジャイロセンサー値に応じてLEDを制御（最大角速度の軸のみ点灯）"""
         if GPIO is None:
             return
 
@@ -77,7 +71,7 @@ class GPIOController:
             GPIO.output(LED_GYRO_Y, GPIO.HIGH if abs_gy == max_gyro else GPIO.LOW)
             GPIO.output(LED_GYRO_Z, GPIO.HIGH if abs_gz == max_gyro else GPIO.LOW)
         else:
-            # 全ての軸が閾値未満の場合は全て消灯
+            # 全て消灯
             GPIO.output(LED_GYRO_X, GPIO.LOW)
             GPIO.output(LED_GYRO_Y, GPIO.LOW)
             GPIO.output(LED_GYRO_Z, GPIO.LOW)

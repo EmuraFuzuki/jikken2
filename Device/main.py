@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Raspberry Pi 手ぶくろ入力装置 メインプログラム
-    - MPU6050 角速度トリガ
-    - HC-SR04 距離レンジ & エアタップ検出
+MPU6050角速度センサとHC-SR04距離センサを使用した非接触入力装置
 """
 
 import time
@@ -18,10 +17,10 @@ class GloveInputDevice:
     def __init__(self):
         print("手ぶくろ入力装置を初期化しています...")
 
-        # GPIO制御を最初に初期化（GPIO.setmode()を実行）
+        # GPIO制御を初期化
         self.gpio_controller = GPIOController()
 
-        # その後でセンサーとコントローラーの初期化
+        # センサーとコントローラーの初期化
         self.mpu6050 = MPU6050()
         self.hcsr04 = HCSR04()
         self.air_tap_detector = AirTapDetector()
@@ -41,60 +40,48 @@ class GloveInputDevice:
                 # 非ブロッキングLED制御の更新
                 led_just_turned_off = self.gpio_controller.update_distance_leds()
 
-                # LED消灯直後にエアタップ履歴をクリアして反応性を改善
+                # LED消灯直後にエアタップ履歴をクリア
                 if led_just_turned_off:
                     self.air_tap_detector.clear_history()
 
-                # ジャイロセンサーの値を取得
+                # ジャイロセンサー値を取得
                 gx, gy, gz = self.mpu6050.read_gyro()
 
-                # ジャイロセンサーの値に応じてLEDを制御
+                # ジャイロセンサー値に応じてLEDを制御
                 self.gpio_controller.set_gyro_leds(gx, gy, gz)
 
                 # 距離測定
                 distance = self.hcsr04.measure_distance()
 
                 if distance is not None:
-                    # 1. エアタップ検出
+                    # エアタップ検出
                     self.air_tap_detector.add_distance(distance)
                     air_tap_detected = self.air_tap_detector.check_air_tap()
 
                     if air_tap_detected:
-                        print(f"エアタップ検出！ 距離: {distance:.1f} cm")
                         # 距離レンジLEDが点灯中の場合は強制消灯
                         if self.gpio_controller.led_active:
                             self.gpio_controller.led_active = False
-                            # 距離LEDを強制消灯
                             self.gpio_controller.set_distance_leds(0)
 
                         self.gpio_controller.blink_red()
                         self.air_tap_detector.clear_history()
-                        # エアタップ検出時は距離レンジ処理をスキップ
                     else:
-                        # 2. 距離レンジ測定（エアタップが検出されなかった場合のみ）
+                        # 距離レンジ測定（エアタップが検出されなかった場合のみ）
                         range_value = self.gpio_controller.get_distance_range(distance)
 
-                        # 3. 距離レンジが同一である継続時間が1秒以上の場合
+                        # 距離レンジが同一である継続時間が1秒以上の場合
                         if self.range_timer.update(range_value, t_now):
-                            print(f"距離レンジ: {range_value}, 距離: {distance:.1f} cm")
                             # 範囲外はスキップ
                             if range_value < 0:
                                 continue
                             # 点滅中でない場合のみLEDを点灯
                             if not self.gpio_controller.blink_active:
-                                # LEDを非ブロッキングで1秒間点灯
                                 self.gpio_controller.set_distance_leds_non_blocking(
                                     range_value
                                 )
-                            # 距離レンジの継続時間をリセット（同じレンジでも再判定可能にする）
+                            # 距離レンジの継続時間をリセット
                             self.range_timer.reset_timer()
-
-                # デバッグ出力（必要に応じて）
-                if distance is not None and len(self.air_tap_detector.dist_history) > 0:
-                    print(
-                        f"距離: {distance:.1f}cm, 履歴数: {len(self.air_tap_detector.dist_history)}, "
-                        f"LED点灯中: {self.gpio_controller.led_active}, 点滅中: {self.gpio_controller.blink_active}"
-                    )
 
                 time.sleep(LOOP_DT)
 
