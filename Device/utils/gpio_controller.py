@@ -88,11 +88,11 @@ class GPIOController:
         """距離を範囲に変換"""
         if distance is None:
             return None
-        elif 0.0 <= distance < TAP_NEAR:
+        elif 0.0 <= distance < 5.0:
             return 1
-        elif TAP_NEAR <= distance < TAP_FAR:
+        elif 5.0 <= distance < 10.0:
             return 2
-        elif TAP_FAR <= distance < 15.0:
+        elif 10.0 <= distance < 15.0:
             return 3
         else:
             return None
