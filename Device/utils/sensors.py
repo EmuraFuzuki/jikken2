@@ -130,7 +130,8 @@ class AirTapDetector:
         # 3. 速度を計算して閾値をチェック
         total_distance_change = start_distance - end_distance  # 近づいた距離
         # total_time = times[-1] - times[0]  # 経過時間/
-        total_time = sum(times) / 100
+        total_time = sum(times)
+        print(f"Distance: {total_distance_change}, Time: {total_time}")
 
         if total_time <= 0:
             print("Invalid time interval for air tap detection.")
