@@ -114,6 +114,7 @@ class AirTapDetector:
 
         distances = list(self.dist_history)
         times = list(self.time_history)
+        print(f"Distances: {distances}, Times: {times}")
 
         # 1. 全ての距離が検出範囲内（0~10cm）にあるかチェック
         # if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
