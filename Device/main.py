@@ -58,6 +58,7 @@ class GloveInputDevice:
                         self.air_tap_detector.clear_history()
                         # エアタップ検出時は距離レンジ処理をスキップ
                     else:
+                        continue
                         # 2. 距離レンジ測定（エアタップが検出されなかった場合のみ）
                         range_value = self.gpio_controller.get_distance_range(distance)
 
