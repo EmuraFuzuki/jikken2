@@ -24,8 +24,6 @@ from config import (
     GYRO_THRESHOLD,
     BLINK_TIMES,
     BLINK_INTERVAL,
-    TAP_NEAR,
-    TAP_FAR,
     DISTANCE_RANGES,
     LED_ON_TIME,
 )
