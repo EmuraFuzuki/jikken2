@@ -108,6 +108,8 @@ class AirTapDetector:
 
     def check_air_tap(self):
         """履歴からエアタップを判定（0~10cm範囲内で速度基準）"""
+        print(self.dist_history)
+        print(self.time_history)
         if len(self.dist_history) < 5:  # 最低5点のデータが必要
             return False
 
