@@ -30,7 +30,7 @@ SOUND_SPEED = 34300.0  # [cm/s]
 
 # エアタップ検出用パラメータ
 TAP_WINDOW = 0.30  # [s] 観測窓
-TAP_DETECTION_RANGE = 20.0  # [cm] エアタップ検出範囲（0~10cm）
+TAP_DETECTION_RANGE = 25.0  # [cm] エアタップ検出範囲（0~25cm）
 TAP_MIN_SPEED = 15.0  # [cm/s] 最小近づき速度
 BLINK_TIMES = 3  # 点滅回数
 BLINK_INTERVAL = 0.15  # [s] 点滅間隔
