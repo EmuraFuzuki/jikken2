@@ -116,7 +116,6 @@ class AirTapDetector:
 
         # 1. 全ての距離が検出範囲内にあるかチェック
         if not all(0 <= d <= TAP_DETECTION_RANGE for d in distances):
-            print("Distance out of range for air tap detection.")
             return False
 
         # 2. 手を近づける動きかチェック
@@ -130,10 +129,8 @@ class AirTapDetector:
         # 3. 速度を計算して閾値をチェック
         total_distance_change = start_distance - end_distance  # 近づいた距離
         total_time = times[0] - times[-1]  # 経過時間
-        print(f"Distance: {total_distance_change}, Time: {total_time}")
 
         if total_time <= 0:
-            print("Invalid time interval for air tap detection.")
             return False
 
         approach_speed = (
@@ -141,7 +138,6 @@ class AirTapDetector:
         )  # cm/s（正の値は近づく速度）
 
         # 4. 十分な速度で近づいているかチェック
-        print(f"Approach speed: {approach_speed:.2f} cm/s")
         return approach_speed >= TAP_MIN_SPEED
 
     def clear_history(self):
