@@ -46,6 +46,10 @@ class GPIOController:
         for pin in OUTPUT_LEDS:
             GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
+        # 非ブロッキングLED制御用の変数
+        self.led_end_time = 0
+        self.led_active = False
+
     def set_gyro_leds(self, gx, gy, gz):
         """ジャイロセンサーの値に応じてLEDを制御"""
         if GPIO is None:
@@ -80,6 +84,34 @@ class GPIOController:
         # LEDを消灯
         for pin in leds:
             GPIO.output(pin, GPIO.LOW)
+
+    def set_distance_leds_non_blocking(self, rng, duration=LED_ON_TIME):
+        """距離レンジに応じてLEDを非ブロッキングで指定時間点灯"""
+        if GPIO is None:
+            return
+
+        leds = (LED_DIST_1, LED_DIST_2, LED_DIST_3)
+        # LEDを点灯
+        for i, pin in enumerate(leds, start=1):
+            GPIO.output(pin, GPIO.HIGH if rng and i <= rng else GPIO.LOW)
+
+        # 終了時刻を設定
+        self.led_end_time = time.time() + duration
+        self.led_active = True
+
+    def update_distance_leds(self):
+        """非ブロッキングLED制御の更新（メインループから呼び出し）"""
+        if GPIO is None:
+            return False
+
+        if self.led_active and time.time() >= self.led_end_time:
+            # LEDを消灯
+            leds = (LED_DIST_1, LED_DIST_2, LED_DIST_3)
+            for pin in leds:
+                GPIO.output(pin, GPIO.LOW)
+            self.led_active = False
+            return True  # LED消灯完了を通知
+        return False  # まだLED点灯中または非アクティブ
 
     def blink_red(self, times=BLINK_TIMES):
         """赤色LEDを点滅させる"""

@@ -153,16 +153,26 @@ class RangeTimer:
         self.hold_sec = hold_sec
         self.current_range = None
         self.enter_time = None
+        self.last_triggered_range = None
+        self.last_triggered_time = None
 
     def update(self, rng, now):
         """rng: None,1(0-5),2(5-10),3(10-15),4(範囲外)"""
         if rng == self.current_range:
-            # 継続中
-            return (
+            # 同じレンジに継続中
+            if (
                 rng is not None
                 and self.enter_time is not None
                 and now - self.enter_time >= self.hold_sec
-            )
+            ):
+                # 前回トリガーされてから十分時間が経過しているかチェック
+                if (
+                    self.last_triggered_range != rng
+                    or self.last_triggered_time is None
+                    or now - self.last_triggered_time >= self.hold_sec
+                ):
+                    return True
+            return False
         else:
             # レンジ移行
             self.current_range = rng
@@ -170,5 +180,9 @@ class RangeTimer:
             return False
 
     def reset_timer(self):
-        """継続時間をリセット"""
-        self.enter_time = None
+        """継続時間をリセット（トリガー後に呼び出し）"""
+        # トリガーされた情報を記録
+        self.last_triggered_range = self.current_range
+        self.last_triggered_time = time.time()
+        # 新しい判定のために enter_time をリセット
+        self.enter_time = time.time()

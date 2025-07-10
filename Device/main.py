@@ -38,6 +38,13 @@ class GloveInputDevice:
             while True:
                 t_now = time.time()
 
+                # 非ブロッキングLED制御の更新
+                led_just_turned_off = self.gpio_controller.update_distance_leds()
+
+                # LED消灯直後にエアタップ履歴をクリアして反応性を改善
+                if led_just_turned_off:
+                    self.air_tap_detector.clear_history()
+
                 # ジャイロセンサーの値を取得
                 gx, gy, gz = self.mpu6050.read_gyro()
 
@@ -64,9 +71,11 @@ class GloveInputDevice:
                         # 3. 距離レンジが同一である継続時間が1秒以上の場合
                         if self.range_timer.update(range_value, t_now):
                             print(f"距離レンジ: {range_value}, 距離: {distance:.1f} cm")
-                            # LEDを1秒間点灯
-                            self.gpio_controller.set_distance_leds_timed(range_value)
-                            # 距離レンジの継続時間をリセット
+                            # LEDを非ブロッキングで1秒間点灯
+                            self.gpio_controller.set_distance_leds_non_blocking(
+                                range_value
+                            )
+                            # 距離レンジの継続時間をリセット（同じレンジでも再判定可能にする）
                             self.range_timer.reset_timer()
 
                 # デバッグ出力（必要に応じて）
